@@ -13,6 +13,9 @@
 **현재 결정:** 사용자는 NMT가 아닌 LLM 비교 대안으로 진행하도록 선택했다.
 직접 Azure OpenAI 호출 경로를 선택해 `gpt-5-mini` 개발 배포를 준비했다.
 리소스·처리량·서버 설정과 검증 결과는 [배포 가이드](deployment.md)에 기록한다.
+이후 Philos 이름의 주소를 위해 유료 App Service로 이전했다.
+아래 Functions 경유안은 조사 당시 설계이며 현재는 App Service Node 서버에 API를 추가할 예정이다.
+모델은 유지하고 서버 비밀 설정도 App Service로 옮겼다.
 아래 NMT 추천은 조사 당시의 비교 근거로 보존하며 현재 선택과 구분한다.
 NMT·Translator LLM 옵션 리소스는 중복 생성하지 않았다.
 

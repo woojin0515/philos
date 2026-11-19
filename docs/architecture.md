@@ -13,7 +13,7 @@
 | 기본 `fetch` | 단순한 요청에 별도 데이터 라이브러리를 추가하지 않음 |
 | Oxlint + TypeScript | 템플릿 기본 린터와 타입 검사. 당초 ESLint 추천을 대체 |
 | Vitest + React Testing Library (후속) | 동작 구현 시 상태 전환 검증 |
-| Azure Static Web Apps Free | 초기 화면 호스팅 |
+| Azure App Service Linux B1 | Philos 이름의 기본 주소, Node 정적 서버 |
 
 React·TypeScript·Vite와 검사 도구를 구성했고 lockfile로 설치 버전을 관리한다.
 CI는 `.nvmrc`의 Node.js 24 LTS를 사용한다.
@@ -47,7 +47,7 @@ API 선정 후 `services/`의 작은 함수에서 실제 필드를 화면에 필
 Azure 번역 사용 요구에 따른 최신 권장 흐름은
 `브라우저 -> 자체 Functions API -> 명언 조회 + Azure 번역 -> 응답`이다.
 위 직접 호출 흐름은 영어 공급자 조사 당시의 기본안이다.
-서버는 기존 SWA 관리형 Functions를 사용할 예정이며 서버 폴더·API 코드는 아직 없다.
+현재 서버는 App Service의 `server.mjs`이며 빌드 산출물만 제공한다. 명언·번역 API 코드는 아직 없다.
 Azure OpenAI와 `gpt-5-mini` 개발 배포, 서버 환경설정은 준비했고 공개 번역은 비활성화했다.
 리소스·처리량·키 관리 상태는 [배포 가이드](deployment.md)를 따른다.
 
@@ -67,6 +67,8 @@ philos/
 ├── tsconfig.app.json
 ├── tsconfig.node.json
 ├── vite.config.ts
+├── server.mjs
+├── server.test.mjs
 ├── README.md
 ├── docs/
 │   ├── product.md
@@ -106,6 +108,7 @@ Git은 빈 디렉터리를 추적하지 않으므로 `.gitkeep`으로 폴더를 
 앱 진입점·패키지·Vite·TypeScript·Oxlint·GitHub Actions 설정은 초기 배포에 포함했다.
 `.gitignore`는 공개 저장소 게시 전에 추가했고 개발 세팅 시 필요한 규칙을 보완한다.
 테스트는 대상 코드 옆에 두며 별도 빈 테스트 트리는 만들지 않는다.
-서버 API·LLM 설정과 기능 테스트는 후속 기능 구현에서 추가한다.
+명언·번역 API와 기능 테스트는 후속 구현에서 추가한다.
+GitHub Actions는 OIDC로 App Service에 배포하며 자세한 구성은 [배포 가이드](deployment.md)를 따른다.
 
 현재 실행 가능한 npm 스크립트는 [개발 가이드](development.md)를 따른다.

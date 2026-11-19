@@ -27,6 +27,8 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
+      - run: npm test
+      - run: cp server.mjs dist/server.mjs
       - uses: actions/upload-artifact@v7
         with:
           name: site
@@ -39,16 +41,30 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     environment: development
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/download-artifact@v8
         with:
           name: site
           path: dist
-      - uses: Azure/static-web-apps-deploy@v1
+      - run: |
+          mkdir site
+          mv dist/server.mjs site/server.mjs
+          mv dist site/dist
+          cd site
+          zip -qr ../site.zip .
+      - uses: azure/login@v2
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          action: upload
-          app_location: dist
-          api_location: ''
-          output_location: ''
-          skip_app_build: true
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy App Service
+        env:
+          AZURE_WEBAPP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+        run: |
+          az webapp deploy --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$AZURE_WEBAPP_NAME" --src-path site.zip \
+            --type zip --clean true --restart true --output none

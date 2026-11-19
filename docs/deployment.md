@@ -2,9 +2,56 @@
 
 [문서 목록](../README.md)
 
-## 현재 상태와 추천안
+## 현재 App Service 배포
 
-## 초기 배포 구성
+| 항목 | 현재 설정 |
+|---|---|
+| URL | https://philos.azurewebsites.net |
+| 리소스 그룹 | `rg-philos-dev` (기존 유지) |
+| 웹 앱 | `philos`, Korea Central, Linux Node.js 24 LTS |
+| App Service Plan | `plan-philos-dev`, Basic B1, 인스턴스 1 |
+| 시작 명령 | `node server.mjs` |
+| 기능 | 초기 정적 화면만. 명언·번역 API 미구현, 번역 비활성화 |
+| 배포 | GitHub Actions, `development` 환경, Azure OIDC |
+
+사용자가 유료 서비스로 Philos 이름을 포함하도록 요청해 App Service로 이전했다.
+**B1은 호출량과 무관하게 플랜 실행 시간에 따라 비용이 발생한다.**
+웹 앱을 중지해도 플랜 비용은 계속될 수 있다. Azure OpenAI 사용료와 별도다.
+정확한 단가·통화·세금은 계약과 리전에 따라 [가격표](https://azure.microsoft.com/en-us/pricing/details/app-service/linux/)와
+로그인한 가격 계산기에서 확인한다. 월 예산·금액 하드 캡을 구성한 상태는 아니다.
+전용 도메인 구매 없이 `philos.azurewebsites.net`을 확보했다.
+
+`server.mjs`는 의존성 없이 빌드된 `dist`의 파일만 GET·HEAD로 제공한다.
+SWA 설정 파일의 보안 헤더는 Node 서버가 읽어 동일하게 적용한다.
+소스·환경파일·설정 파일 자체는 외부에 제공하지 않는다.
+후속 API를 이 서버에 추가할 수 있어 관리형 Functions는 현재 도입하지 않는다.
+App Service는 HTTPS 전용·TLS 1.2 이상·Always On을 설정했고 FTP·SCM 기본 인증을 비활성화했다.
+
+GitHub `development` 환경의 배포 전용 Managed Identity `id-philos-deploy`를 사용한다.
+Federation 대상은 `repo:woojin0515/philos:environment:development`이며,
+웹 앱 리소스에만 Website Contributor 역할을 부여했다.
+이 identity는 앱 런타임이나 Azure OpenAI 접근용 identity와 다르다.
+로그인에는 `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` 환경 변수를,
+배포에는 `AZURE_WEBAPP_NAME`, `AZURE_RESOURCE_GROUP` 변수를 사용한다.
+이 값들은 GitHub 환경 Variables에 저장하며 클라이언트 비밀·게시 프로필을 사용하지 않는다.
+CI는 린트·타입 검사·빌드 후 정적 산출물과 서버만 zip으로 업로드한다.
+
+기존 SWA의 서버 설정을 비밀 노출 없이 App Service로 복사했고
+`TRANSLATION_ENABLED=false`를 유지했다.
+기존 Free SWA는 롤백용으로 보존했지만 자동 배포 대상에서는 제외했다.
+현재 공식 주소는 위 App Service 주소다.
+Azure OpenAI 리소스·모델 배포는 변경하지 않았다.
+
+새 주소를 실제 Chromium에서 열어 제목·본문, JS·CSS 200, CSP 헤더,
+모바일·데스크톱 레이아웃과 브라우저 실행 오류 없음을 확인했다.
+Node 서버의 HTML·자산 제공, 캐시, HEAD, 비공개 경로 404, POST 405 테스트도 통과했다.
+
+## 이전 Static Web Apps 배포 기록
+
+아래 SWA 주소·Functions 계획·토큰 설정은 이전 구성의 기록이다.
+현재 배포 대상과 서버 구조는 위 App Service 구성을 따른다.
+
+### 초기 배포 구성
 
 | 항목 | 설정 |
 |---|---|
