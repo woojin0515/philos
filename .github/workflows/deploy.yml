@@ -18,8 +18,8 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -27,10 +27,11 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: site
           path: dist
+          if-no-files-found: error
           retention-days: 7
 
   deploy:
@@ -39,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: development
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: site
           path: dist
@@ -51,5 +52,3 @@ jobs:
           api_location: ''
           output_location: ''
           skip_app_build: true
-          skip_api_build: true
-          production_branch: main

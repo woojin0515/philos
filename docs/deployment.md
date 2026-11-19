@@ -30,6 +30,14 @@ GitHub `development` 환경의 `AZURE_STATIC_WEB_APPS_API_TOKEN`에
 
 아래 내용은 후속 변경·재배포 및 서버 확장 시 참고하는 절차다.
 
+### 초기 검증 결과
+
+로컬 및 GitHub Actions에서 린트·타입 검사·프로덕션 빌드가 통과했다.
+[최초 배포 실행](https://github.com/woojin0515/philos/actions/runs/44556457732)이 성공했고,
+실제 배포 주소를 Chromium으로 열어 한국어 제목·본문 렌더링, JS·CSS 200 응답,
+375px·1280px 화면의 가로 넘침 없음, CSP 헤더, 브라우저 실행 오류 없음을 확인했다.
+명언·번역 기능은 검증 대상이 아니라 미구현 상태다.
+
 Azure MCP의 Static Web Apps 가이드를 참고했다.
 플랜 가격·한도·리전 지원·조직 정책은 배포 시 공식 문서와 Portal에서 다시 확인한다.
 무료 이용 가능 여부나 비용이 발생하지 않는다는 점을 보장하지 않는다.
