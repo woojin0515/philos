@@ -28,7 +28,8 @@ SWA 설정 파일의 보안 헤더는 Node 서버가 읽어 동일하게 적용�
 App Service는 HTTPS 전용·TLS 1.2 이상·Always On을 설정했고 FTP·SCM 기본 인증을 비활성화했다.
 
 GitHub `development` 환경의 배포 전용 Managed Identity `id-philos-deploy`를 사용한다.
-Federation 대상은 `repo:woojin0515/philos:environment:development`이며,
+Federation 대상은 실제 OIDC assertion에서 확인한 불변 ID 포함 subject
+`repo:woojin0515@142905724/philos@1464304028:environment:development`이며,
 웹 앱 리소스에만 Website Contributor 역할을 부여했다.
 이 identity는 앱 런타임이나 Azure OpenAI 접근용 identity와 다르다.
 로그인에는 `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` 환경 변수를,
