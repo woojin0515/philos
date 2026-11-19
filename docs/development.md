@@ -10,7 +10,7 @@
 
 ## 후속 개발 세팅 순서
 
-1. [명언 API 조사](quote-data.md)를 완료하고 필요한 호출 구조를 결정한다.
+1. [명언 API 조사 결과](quote-data.md)를 바탕으로 명언 언어·이용 조건을 확인하고 최종 API와 호출 구조를 결정한다.
 2. 지원 중인 Node.js LTS와 npm, Vite 및 주요 라이브러리의 호환 버전을 확인한다.
 3. 기존 README·문서·폴더를 덮어쓰지 않도록 React + TypeScript 프로젝트 설정을 통합한다.
 4. 기본 CSS, ESLint, 타입 검사, Vitest + React Testing Library를 최소 구성으로 설정한다.
