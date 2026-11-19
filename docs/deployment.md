@@ -10,7 +10,7 @@
 |---|---|
 | 리소스 그룹 | `rg-philos-dev`, Korea Central |
 | Static Web App | `swa-philos-dev`, East Asia, Free |
-| URL | https://brave-sand-036372100.6.azurestaticapps.net |
+| URL | https://wonderful-hill-0d84f8000.6.azurestaticapps.net |
 | 범위 | 초기 안내 화면. 명언·LLM 번역 미구현 |
 | 배포 | `main` push 또는 workflow_dispatch → GitHub Actions |
 | API | 없음. LLM 서버는 후속 단계 |
@@ -19,10 +19,14 @@
 
 현재 SWA 자동 생성 주소는 원하는 문자열로 이름을 변경할 수 없다.
 `swa-philos-dev`라는 리소스 이름과 사이트의 자동 호스트 이름은 별개다.
-삭제·재생성해도 `philos.azurestaticapps.net`을 지정할 수 없으므로 기존 앱을 유지했다.
+삭제·재생성해도 `philos.azurestaticapps.net`을 지정할 수 없다.
+사용자의 명시적 요청으로 웹 앱만 삭제·재생성했고 현재 표의 새 자동 주소를 받았다.
+기존 `brave-sand-036372100.6.azurestaticapps.net` 주소는 더 이상 이 앱의 배포 주소가 아니다.
+리소스 그룹·Azure OpenAI·모델 배포는 보존했다.
+서버 설정을 메모리에서 복구하고 GitHub 환경의 배포 Secret을 새 토큰으로 교체했다.
 
 Philos 이름의 주소는 소유·관리 권한이 있는 도메인(예: `philos.example.com`)을 연결해야 한다.
-현재 연결된 커스텀 도메인은 없고 사용할 도메인·DNS 관리 위치를 받지 못해 **주소 변경은 보류**했다.
+현재 연결된 커스텀 도메인은 없고 사용할 도메인·DNS 관리 위치를 받지 못해 **Philos 이름 연결은 보류**했다.
 도메인 구매, DNS 영역 생성, 다른 호스팅으로 이전은 진행하지 않았다.
 공식 안내: [SWA 커스텀 도메인](https://learn.microsoft.com/en-us/azure/static-web-apps/custom-domain).
 

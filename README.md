@@ -7,7 +7,7 @@
 
 **React + TypeScript + Vite 최소 앱과 초기 배포 구성을 준비했습니다.**
 초기 화면만 제공하며 명언 조회·한국어 번역 기능은 아직 구현하지 않았습니다.
-배포 주소: https://brave-sand-036372100.6.azurestaticapps.net
+배포 주소: https://wonderful-hill-0d84f8000.6.azurestaticapps.net
 SWA 자동 주소는 이름 변경이 불가능합니다. Philos 커스텀 주소는 보유 도메인 정보가 없어 연결 대기 중입니다.
 
 Node.js 24 LTS를 권장합니다. `npm ci` 후 `npm run dev`로 개발 서버를 실행합니다.
