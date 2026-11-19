@@ -1,0 +1,36 @@
+# Dependencies and generated output
+node_modules/
+dist/
+dist-ssr/
+coverage/
+.vite/
+*.tsbuildinfo
+.eslintcache
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
+.npmrc
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+local.settings.json
+.azure/
+.azurite/
+.azd/
+.swa/
+__azurite_db*
+__blobstorage__/
+__queuestorage__/
+
+# Logs and local tooling
+*.log
+.DS_Store
+.idea/
+.vscode/

@@ -43,6 +43,7 @@ API 선정 후 `services/`의 작은 함수에서 실제 필드를 화면에 필
 
 ```text
 philos/
+├── .gitignore
 ├── README.md
 ├── docs/
 │   ├── product.md
@@ -77,7 +78,8 @@ Git은 빈 디렉터리를 추적하지 않으므로 `.gitkeep`으로 폴더를 
 ## 개발 세팅 이후 추가할 파일
 
 앱 진입점 `src/main.tsx`, `src/App.tsx`, 루트 `index.html`과 `package.json`,
-lockfile, Vite·TypeScript·ESLint·테스트 설정, `.gitignore`는 후속 단계에서 생성한다.
+lockfile, Vite·TypeScript·ESLint·테스트 설정은 후속 단계에서 생성한다.
+`.gitignore`는 공개 저장소 게시 전에 추가하며 개발 세팅 시 필요한 규칙을 보완한다.
 테스트는 대상 코드 옆에 두며 별도 빈 테스트 트리는 만들지 않는다.
 GitHub Actions 및 Azure 설정은 실제 배포 경로가 정해진 뒤 추가한다.
 
