@@ -15,6 +15,52 @@
 | 배포 | `main` push 또는 workflow_dispatch → GitHub Actions |
 | API | 없음. LLM 서버는 후속 단계 |
 
+## Philos 주소 연결 상태
+
+현재 SWA 자동 생성 주소는 원하는 문자열로 이름을 변경할 수 없다.
+`swa-philos-dev`라는 리소스 이름과 사이트의 자동 호스트 이름은 별개다.
+삭제·재생성해도 `philos.azurestaticapps.net`을 지정할 수 없으므로 기존 앱을 유지했다.
+
+Philos 이름의 주소는 소유·관리 권한이 있는 도메인(예: `philos.example.com`)을 연결해야 한다.
+현재 연결된 커스텀 도메인은 없고 사용할 도메인·DNS 관리 위치를 받지 못해 **주소 변경은 보류**했다.
+도메인 구매, DNS 영역 생성, 다른 호스팅으로 이전은 진행하지 않았다.
+공식 안내: [SWA 커스텀 도메인](https://learn.microsoft.com/en-us/azure/static-web-apps/custom-domain).
+
+도메인이 정해지면 해당 이름의 CNAME을 현재 SWA 호스트로 설정하고,
+Portal의 Custom domains에서 소유권 검증과 TLS 인증서 발급을 완료한다.
+루트 도메인은 레코드 방식이 다를 수 있으므로 등록 업체별 공식 안내를 따른다.
+등록·갱신 비용은 별도이며 Azure는 연결된 도메인에 관리형 TLS 인증서를 제공한다.
+이름 연결 후 HTTPS·앱 렌더링·필요한 리디렉션을 다시 검증해야 한다.
+도메인 없이 `philos`가 포함된 플랫폼 기본 주소를 원하면 다른 호스팅의
+이름 가용성·비용·배포 구조를 먼저 비교하며 임의로 이전하지 않는다.
+
+## 추가된 LLM 서비스와 서버 준비
+
+| 항목 | 현재 설정 |
+|---|---|
+| Azure OpenAI | `aoai-philos-dev`, East US 2, S0 |
+| 모델 배포 | `philos-translate`, `gpt-5-mini`, 버전 `2025-08-07` |
+| 배포 유형 | GlobalStandard, 용량 1, 사용량 기반 과금. PTU 예약 아님 |
+| 확인된 처리 한도 | 배포 응답 기준 분당 요청 1회·토큰 1,000개. 금액 상한 아님 |
+| 버전 정책 | NoAutoUpgrade. 조회한 카탈로그의 퇴역일 `2027-07-13` 이전 재검토 필요 |
+| 번역 서버 | 기존 SWA 관리형 Functions 사용 예정. API 코드는 아직 미배포 |
+| 공개 번역 상태 | `TRANSLATION_ENABLED=false`. 앱에서는 아직 번역을 호출하지 않음 |
+
+기본 구독의 East US 2 모델 가용성·잔여 할당량을 조회한 뒤 생성했다.
+GlobalStandard는 전역 처리일 수 있으며 한국 내 처리만을 보장하지 않는다.
+작은 개발 한도는 공개 서비스 트래픽에 부족하므로 사용자별·전체 호출 제한과 월 예산을 정한 후 확대한다.
+구독·계약 단가와 월 예산은 아직 확정하지 않았다. 비용 알림·하드 캡도 구성하지 않았다.
+단발 번역 검증은 과금되는 실제 호출이며 입력 29·완료 81 토큰(추론 64 포함), 합계 110 토큰을 반환했다.
+자체 작성한 테스트 문장만 전송했고 명언을 대량 수집·번역하지 않았다.
+이 1회 성공은 명언 번역 품질 평가나 앱 통합 검증이 아니다.
+
+SWA 서버 앱 설정에 `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`,
+`AZURE_OPENAI_DEPLOYMENT`, `QUOTES_API_URL`, `TRANSLATION_ENABLED`를 준비했다.
+기존 설정은 병합해 보존했으며 키는 메모리에서 전달해 로컬 파일·명령 인수·저장소에 기록하지 않았다.
+관리형 Functions는 별도 Function App을 생성하지 않고 API 코드를 배포할 때 사용한다.
+이 구성을 위해 추가 DB, Storage Account, Key Vault, Application Insights는 만들지 않았다.
+인증 방식·영속 저장·관측 요구가 생기면 각각 필요성을 재검토한다.
+
 Azure CLI로 리소스를 생성했으며 같은 리소스를 Azure Portal에서 관리할 수 있다.
 이번 최소 배포는 azd/IaC 대신 CLI + GitHub Actions로 구성했다.
 전체 인프라 자동화는 서버·LLM 구성이 결정된 뒤 검토한다.
