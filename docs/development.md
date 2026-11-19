@@ -11,6 +11,7 @@
 ## 후속 개발 세팅 순서
 
 1. [선택한 Stoic Quotes와 번역 검토](quote-data.md)를 바탕으로 한국어 번역 경로·비용·이용 조건과 호출 구조를 결정한다.
+   번역은 [Azure 서비스 비교](azure-translation.md)를 따르며 서버 인증·호스팅을 함께 확정한다.
 2. 지원 중인 Node.js LTS와 npm, Vite 및 주요 라이브러리의 호환 버전을 확인한다.
 3. 기존 README·문서·폴더를 덮어쓰지 않도록 React + TypeScript 프로젝트 설정을 통합한다.
 4. 기본 CSS, ESLint, 타입 검사, Vitest + React Testing Library를 최소 구성으로 설정한다.
