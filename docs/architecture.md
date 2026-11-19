@@ -2,7 +2,7 @@
 
 [문서 목록](../README.md)
 
-## 기술 선택: 개발 세팅 시 적용할 추천안
+## 기술 선택: 초기 배포 구성
 
 | 선택 | 근거 |
 |---|---|
@@ -11,12 +11,12 @@
 | 기본 CSS | 단일 화면에 불필요한 UI 의존성을 추가하지 않음 |
 | npm | 단일 앱의 의존성과 lockfile 관리 |
 | 기본 `fetch` | 단순한 요청에 별도 데이터 라이브러리를 추가하지 않음 |
-| ESLint + TypeScript | 정적 오류와 코드 규칙 검사 |
-| Vitest + React Testing Library | 데이터 처리와 사용자 관점의 상태 전환 검증 |
-| Azure Static Web Apps | 정적 빌드 결과 호스팅 후보 |
+| Oxlint + TypeScript | 템플릿 기본 린터와 타입 검사. 당초 ESLint 추천을 대체 |
+| Vitest + React Testing Library (후속) | 동작 구현 시 상태 전환 검증 |
+| Azure Static Web Apps Free | 초기 화면 호스팅 |
 
-현재 설치되거나 설정된 도구는 없다.
-버전은 개발 세팅 시 호환되는 안정 버전과 지원 중인 Node.js LTS를 확인해 고정한다.
+React·TypeScript·Vite와 검사 도구를 구성했고 lockfile로 설치 버전을 관리한다.
+CI는 `.nvmrc`의 Node.js 24 LTS를 사용한다.
 초기에는 라우터, SSR, 전역 상태 라이브러리, 모노레포, DB를 도입하지 않는다.
 Azure 번역 자격 증명 보호를 위한 최소 서버 API는 검토 대상에 포함한다.
 
@@ -38,7 +38,7 @@ API 선정 후 `services/`의 작은 함수에서 실제 필드를 화면에 필
 
 브라우저 직접 호출은 CORS와 키 노출 문제가 없는 API를 선정했을 때의 기본안이다.
 개발용 공급자는 Stoic Quotes이며 인증 없는 직접 호출과 CORS 응답을 확인했다.
-`.env.example`의 `VITE_QUOTES_API_URL`은 공개 주소 예시이며 이를 읽는 앱 코드는 아직 없다.
+`.env.example`의 `VITE_QUOTES_API_URL`은 공개 주소 예시이며 초기 화면에서는 사용하지 않는다.
 영어 위·한국어 해석 아래 표시를 위해 번역 경로를 별도로 결정해야 한다.
 공개 서비스 적용 전 콘텐츠 권리와 실제 브라우저 동작을 확인한다.
 비밀 키나 서버 요청이 필요한 경우 Azure Functions 등 얇은 서버 경유 구조를 재검토하고,
@@ -50,12 +50,22 @@ Azure 번역 사용 요구에 따른 최신 권장 흐름은
 [Azure 번역 조사](azure-translation.md)의 비용·호스팅·인증 제약을 확인한 후 서버 구조를 확정한다.
 아직 서버 폴더·코드·리소스는 생성하지 않았다.
 
-## 현재 생성하는 구조
+## 현재 구조
 
 ```text
 philos/
 ├── .env.example
 ├── .gitignore
+├── .github/workflows/deploy.yml
+├── .nvmrc
+├── .oxlintrc.json
+├── index.html
+├── package.json
+├── package-lock.json
+├── tsconfig.json
+├── tsconfig.app.json
+├── tsconfig.node.json
+├── vite.config.ts
 ├── README.md
 ├── docs/
 │   ├── product.md
@@ -65,14 +75,16 @@ philos/
 │   ├── development.md
 │   └── deployment.md
 ├── public/
-│   └── .gitkeep
+│   └── staticwebapp.config.json
 └── src/
+    ├── App.tsx
+    ├── main.tsx
     ├── components/
     │   └── .gitkeep
     ├── services/
     │   └── .gitkeep
     ├── styles/
-    │   └── .gitkeep
+    │   └── index.css
     └── types/
         └── .gitkeep
 ```
@@ -88,13 +100,11 @@ Git은 빈 디렉터리를 추적하지 않으므로 `.gitkeep`으로 폴더를 
 | `src/styles/` | 기본 스타일과 화면 스타일 |
 | `src/types/` | 여러 파일에서 공유할 데이터 타입. 지역 타입은 사용하는 파일에 유지 |
 
-## 개발 세팅 이후 추가할 파일
+## 후속 추가 사항
 
-앱 진입점 `src/main.tsx`, `src/App.tsx`, 루트 `index.html`과 `package.json`,
-lockfile, Vite·TypeScript·ESLint·테스트 설정은 후속 단계에서 생성한다.
-`.gitignore`는 공개 저장소 게시 전에 추가하며 개발 세팅 시 필요한 규칙을 보완한다.
+앱 진입점·패키지·Vite·TypeScript·Oxlint·GitHub Actions 설정은 초기 배포에 포함했다.
+`.gitignore`는 공개 저장소 게시 전에 추가했고 개발 세팅 시 필요한 규칙을 보완한다.
 테스트는 대상 코드 옆에 두며 별도 빈 테스트 트리는 만들지 않는다.
-GitHub Actions 및 Azure 설정은 실제 배포 경로가 정해진 뒤 추가한다.
+서버 API·LLM 설정과 기능 테스트는 후속 기능 구현에서 추가한다.
 
-예상 검증 명령은 [개발 가이드](development.md)에 정리하며
-지금은 어떤 npm 스크립트도 존재하지 않는다.
+현재 실행 가능한 npm 스크립트는 [개발 가이드](development.md)를 따른다.

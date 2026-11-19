@@ -4,10 +4,31 @@
 
 ## 현재 상태와 추천안
 
-**이 문서는 후속 배포를 위한 계획이다. Azure 리소스나 배포 URL은 아직 없다.**
-React + Vite의 정적 빌드 결과를 Azure Static Web Apps에 올리는 구성을 우선 검토한다.
-사용자가 원하는 Azure Portal 기반 초기 배포와 GitHub Actions 연동을 기본 경로로 삼는다.
-지금은 배포 설정, 워크플로, 인프라 코드를 생성하지 않는다.
+## 초기 배포 구성
+
+| 항목 | 설정 |
+|---|---|
+| 리소스 그룹 | `rg-philos-dev`, Korea Central |
+| Static Web App | `swa-philos-dev`, East Asia, Free |
+| URL | https://brave-sand-036372100.6.azurestaticapps.net |
+| 범위 | 초기 안내 화면. 명언·LLM 번역 미구현 |
+| 배포 | `main` push 또는 workflow_dispatch → GitHub Actions |
+| API | 없음. LLM 서버는 후속 단계 |
+
+Azure CLI로 리소스를 생성했으며 같은 리소스를 Azure Portal에서 관리할 수 있다.
+이번 최소 배포는 azd/IaC 대신 CLI + GitHub Actions로 구성했다.
+전체 인프라 자동화는 서버·LLM 구성이 결정된 뒤 검토한다.
+새 작업은 준비 브랜치에서 검증하고 `main`에 반영해야 배포된다.
+
+워크플로는 린트·타입 검사·빌드 후 산출물만 업로드한다.
+PR에서는 검증만 수행하고 배포하지 않는다.
+GitHub `development` 환경의 `AZURE_STATIC_WEB_APPS_API_TOKEN`에
+공식 SWA 업로드 액션용 배포 토큰을 저장했다. 토큰은 저장소·로그·명령 인수에 기록하지 않는다.
+현재 환경에 수동 승인 게이트는 설정하지 않았다.
+배포 토큰은 리소스 단위 자격 증명이므로 필요 시 Portal에서 교체하고 GitHub Secret도 갱신한다.
+범용 Azure 관리 권한을 가진 서비스 주체·클라이언트 비밀을 CI에 부여하지 않는다.
+
+아래 내용은 후속 변경·재배포 및 서버 확장 시 참고하는 절차다.
 
 Azure MCP의 Static Web Apps 가이드를 참고했다.
 플랜 가격·한도·리전 지원·조직 정책은 배포 시 공식 문서와 Portal에서 다시 확인한다.
@@ -77,7 +98,7 @@ HTTP 응답 성공만으로 빈 화면이나 CORS 문제가 없다고 판단하�
 빌드 실패는 lockfile, Node.js 버전, 앱 위치와 실제 스크립트를 먼저 대조한다.
 빈 화면은 산출물 경로와 JS·CSS 로드 실패를 확인한다.
 명언 요청 실패는 배포 Origin의 CORS·API 한도·인증·응답 형식을 확인한다.
-현재 문서·폴더 단계에서는 배포를 시도하지 않는다.
+현재 최소 화면 배포에는 명언·번역 API 호출이 없어 API 장애 처리 검증은 후속 단계다.
 
 배포 이후 문제가 생기면 이전에 검증한 커밋으로 되돌리는 변경을 만들어 재배포한다.
 최초 배포에는 이전 정상 버전이 없으므로 원인 수정 후 다시 배포한다.
