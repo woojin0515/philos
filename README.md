@@ -5,7 +5,7 @@
 
 ## 현재 단계
 
-**첫 화면에서 버튼을 눌러 영어 철학 명언을 만나는 경험을 구현했습니다.**
+**첫 화면의 스와이프로 영어 철학 명언과 준비된 한국어 번역을 만납니다.**
 배포 주소: https://philos.azurewebsites.net
 Philos 이름의 기본 주소를 사용하기 위해 유료 Azure App Service로 이전했습니다.
 
@@ -14,11 +14,11 @@ Node.js 24 LTS를 권장합니다. `npm ci` 후 `npm run dev:api`와 `npm run de
 
 ## 만들고자 하는 경험
 
-첫 화면에는 `생각해보기` 문구와 가운데 버튼 하나만 표시합니다.
-버튼을 누른 뒤 영어 명언과 저자를 보여 주며, 처음에는 자동 조회하지 않습니다.
-LLM 한국어 번역은 후속 단계로 미룹니다.
-`aoai-philos-dev`의 `philos-translate`(`gpt-5-mini`)를 배포하고 단발 번역을 확인했습니다.
-서버 번역 API는 비활성 상태로 유지하며, Azure 호출 없이 명언만 표시합니다.
+첫 화면에는 `생각해보기` 문구와 가운데 스와이프 조작부 하나만 표시합니다.
+스와이프 후 영어 명언과 저자를 보여 주고, 사전에 준비된 문장에는 한국어 번역을 함께 표시합니다.
+등록되지 않은 문장은 `아직 번역본을 생성하지 못했어요.`를 표시합니다.
+번역은 앱의 정적 사전에서 조회하며 Azure OpenAI·외부 번역 API를 호출하지 않습니다.
+명언 요청 외에 번역을 다시 누르거나 기다리는 동작은 없습니다.
 로그인, 즐겨찾기, 공유, DB는 초기 MVP에 포함하지 않습니다.
 
 ## 추천 기술스택
@@ -27,7 +27,7 @@ LLM 한국어 번역은 후속 단계로 미룹니다.
 |---|---|
 | 프런트엔드 | React + TypeScript + Vite |
 | 스타일 | 기본 CSS |
-| 데이터 요청 | 브라우저 `fetch` → App Service Node API |
+| 데이터 요청 | 브라우저 `fetch` → App Service Node API; 정적 번역 사전 조회 |
 | 패키지 관리 | npm |
 | 품질 도구 | Oxlint, TypeScript. 기능 구현 시 Vitest + React Testing Library 검토 |
 | 배포 | Azure App Service Linux Basic B1 + GitHub Actions OIDC |

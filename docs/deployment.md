@@ -11,7 +11,7 @@
 | 웹 앱 | `philos`, Korea Central, Linux Node.js 24 LTS |
 | App Service Plan | `plan-philos-dev`, Basic B1, 인스턴스 1 |
 | 시작 명령 | `node server.mjs` |
-| 기능 | 스와이프 완료 후 Stoic Quotes 명언을 조회하고, Azure OpenAI 한국어 AI 번역을 표시 |
+| 기능 | 스와이프 완료 후 Stoic Quotes 명언을 조회하고, 정적 번역 사전의 한국어 번역 또는 미등록 안내를 표시 |
 | 배포 | GitHub Actions, `development` 환경, Azure OIDC |
 
 사용자가 유료 서비스로 Philos 이름을 포함하도록 요청해 App Service로 이전했다.
@@ -21,11 +21,11 @@
 로그인한 가격 계산기에서 확인한다. 월 예산·금액 하드 캡을 구성한 상태는 아니다.
 전용 도메인 구매 없이 `philos.azurewebsites.net`을 확보했다.
 
-`server.mjs`는 빌드된 `dist`의 정적 파일과 `/api/quote`, `/api/translate`를 제공한다.
+`server.mjs`는 빌드된 `dist`의 정적 파일과 `/api/quote`를 제공한다.
 SWA 설정 파일의 보안 헤더는 Node 서버가 읽어 동일하게 적용한다.
-클라이언트는 명언 공급자를 직접 호출하지 않으며, Azure 키도 서버 설정에서만 읽는다.
+클라이언트는 명언 공급자를 직접 호출하지 않는다. 번역은 클라이언트의 정적 사전에서 찾으며 외부 번역 호출은 없다.
 배포 산출물에는 `server.mjs`, `server-services/`, `dist/`만 포함한다.
-외부 API 응답과 사용자 입력 크기를 제한하고, 프롬프트·모델 입력을 클라이언트에 노출하지 않는다.
+외부 API 응답 크기와 형식을 제한한다.
 App Service는 HTTPS 전용·TLS 1.2 이상·Always On을 설정했고 FTP·SCM 기본 인증을 비활성화했다.
 
 GitHub `development` 환경의 배포 전용 Managed Identity `id-philos-deploy`를 사용한다.
@@ -38,13 +38,10 @@ Federation 대상은 실제 OIDC assertion에서 확인한 불변 ID 포함 subj
 이 값들은 GitHub 환경 Variables에 저장하며 클라이언트 비밀·게시 프로필을 사용하지 않는다.
 CI는 린트·타입 검사·빌드 후 정적 산출물과 서버만 zip으로 업로드한다.
 
-기존 SWA의 서버 설정을 비밀 노출 없이 App Service로 복사했다.
-사용자 요청에 따라 Azure CLI로 App Service의 `TRANSLATION_ENABLED=true`를 설정해 공개 번역을 활성화했다.
-설정값은 문서·로그에 출력하지 않는다. Azure OpenAI 호출은 사용자가 명언을 요청한 경우에만 발생한다.
-설정 활성화 후 실제 사이트에서 Stoic Quotes 명언의 영어→한국어 번역 응답을 확인했다.
-서버에는 명언별 티켓, 최소 1분 간격, 프로세스당 일일 50회 번역 제한이 있다.
-이 메모리 기반 일일 제한은 앱 재시작·다중 인스턴스에서 초기화·분리되므로 비용 하드 캡이 아니다.
-모델 배포에서 확인한 처리량은 1 RPM·1,000 TPM이며, 계약 단가·월 예산은 별도 확인이 필요하다.
+Azure OpenAI 번역은 응답 지연과 반복 호출 과금 방지를 위해 현재 앱 경로에서 제거했다.
+Azure CLI로 App Service의 `TRANSLATION_ENABLED=false`를 설정하고 앱 설정에서 API 키를 제거했다.
+Azure OpenAI 리소스·모델 배포는 남아 있지만 앱은 모델 요청을 보내지 않는다.
+한국어 번역은 정적 사전에서 즉시 조회하며 미등록 문장에 재시도 버튼을 제공하지 않는다.
 기존 Free SWA는 롤백용으로 보존했지만 자동 배포 대상에서는 제외했다.
 현재 공식 주소는 위 App Service 주소다.
 Azure OpenAI 리소스·모델 배포는 변경하지 않았다.
@@ -92,7 +89,7 @@ Portal의 Custom domains에서 소유권 검증과 TLS 인증서 발급을 완�
 도메인 없이 `philos`가 포함된 플랫폼 기본 주소를 원하면 다른 호스팅의
 이름 가용성·비용·배포 구조를 먼저 비교하며 임의로 이전하지 않는다.
 
-## 추가된 LLM 서비스와 서버 준비
+## 보존 중인 Azure OpenAI 시험 리소스
 
 | 항목 | 현재 설정 |
 |---|---|
@@ -101,27 +98,24 @@ Portal의 Custom domains에서 소유권 검증과 TLS 인증서 발급을 완�
 | 배포 유형 | GlobalStandard, 용량 1, 사용량 기반 과금. PTU 예약 아님 |
 | 확인된 처리 한도 | 배포 응답 기준 분당 요청 1회·토큰 1,000개. 금액 상한 아님 |
 | 버전 정책 | NoAutoUpgrade. 조회한 카탈로그의 퇴역일 `2027-07-13` 이전 재검토 필요 |
-| 번역 서버 | App Service의 Node API (`/api/translate`) |
-| 공개 번역 상태 | App Service의 `TRANSLATION_ENABLED=true`로 활성화 |
+| 앱 번역 방식 | 정적 사전 조회. Azure OpenAI 호출 없음 |
 
+아래 리소스는 이전 LLM 비교·시험 때 만든 기록이며 현재 제품 요청 경로에서 사용하지 않는다.
 기본 구독의 East US 2 모델 가용성·잔여 할당량을 조회한 뒤 생성했다.
 GlobalStandard는 전역 처리일 수 있으며 한국 내 처리만을 보장하지 않는다.
-작은 개발 한도는 공개 서비스 트래픽에 부족하므로 사용자별·전체 호출 제한과 월 예산을 정한 후 확대한다.
 구독·계약 단가와 월 예산은 아직 확정하지 않았다. 비용 알림·하드 캡도 구성하지 않았다.
 단발 번역 검증은 과금되는 실제 호출이며 입력 29·완료 81 토큰(추론 64 포함), 합계 110 토큰을 반환했다.
-추가로 운영 웹앱에서 명언을 발급해 Azure OpenAI 번역 결과를 확인했다.
-자체 작성한 테스트 문장과 사용자가 요청한 명언 번역 검증 외에 대량 수집·번역은 수행하지 않았다.
+설정 활성화 당시 실제 웹앱에서도 명언 번역을 검증했다.
 
-App Service 설정에 `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`,
-`AZURE_OPENAI_DEPLOYMENT`, `TRANSLATION_ENABLED`를 사용한다.
-기존 설정은 병합해 보존했으며 키는 메모리에서 전달해 로컬 파일·명령 인수·저장소에 기록하지 않았다.
+`philos-translate` 모델 배포 기록은 과거 비교·시험 목적으로 보존한다.
+정적 번역 사전은 `src/services/quote-translations.js`에서 관리한다.
 별도 Function App은 사용하지 않는다. 이 구성을 위해 추가 DB, Storage Account,
 Key Vault, Application Insights는 만들지 않았다.
 인증 방식·영속 저장·관측 요구가 생기면 각각 필요성을 재검토한다.
 
 Azure CLI로 리소스를 생성했으며 같은 리소스를 Azure Portal에서 관리할 수 있다.
 이번 최소 배포는 azd/IaC 대신 CLI + GitHub Actions로 구성했다.
-전체 인프라 자동화는 서버·LLM 구성이 결정된 뒤 검토한다.
+전체 인프라 자동화는 필요가 생길 때 검토한다.
 새 작업은 준비 브랜치에서 검증하고 `main`에 반영해야 배포된다.
 
 워크플로는 린트·타입 검사·빌드 후 산출물만 업로드한다.
