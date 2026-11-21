@@ -24,7 +24,7 @@ Azure 번역 자격 증명을 보호하기 위해 App Service Node 서버에 최
 
 ```text
 화면 진입
-  -> 중앙 `생각해보기` 문구와 버튼만 표시 (API 요청 없음)
+  -> 중앙 `생각해보기` 문구와 글래스형 버튼만 표시 (API 요청 없음)
 사용자 버튼 클릭
   -> GET /api/quote
   -> Node 서버가 Stoic Quotes 응답 검증 후 임의 티켓 발급
