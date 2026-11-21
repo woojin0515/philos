@@ -12,9 +12,9 @@
 
 ## 사용 설정과 사용자 작업
 
-- 선택 엔드포인트: `https://stoic-quotes.com/api/quote`.
+- 선택 엔드포인트: `https://www.stoic-quotes.com/api/quote` (canonical HTTPS host; avoids a redirect).
 - 가입·API 키 발급·결제·공급자 콘솔 설정 없이 GET으로 사용한다. 사용자 등록 작업은 없다.
-- 서버가 `https://stoic-quotes.com/api/quote`를 고정 주소로 호출하며 클라이언트는 명언 공급자에 직접 연결하지 않는다.
+- 서버가 `https://www.stoic-quotes.com/api/quote`를 고정 주소로 호출하며 클라이언트는 명언 공급자에 직접 연결하지 않는다.
 - 응답의 `text`는 영어 명언, `author`는 저자로 매핑한다. 한국어 해석 필드는 없다.
 - DummyJSON은 비교·개발 대안으로 남기며 자동 fallback이나 공급자 선택 UI는 추가하지 않는다.
 
@@ -85,7 +85,7 @@ Stoic Quotes 또는 DummyJSON 직접 호출안은 현재 별도 API 구독·API 
 
 | 엔드포인트 | 응답·스키마 | CORS 확인 |
 |---|---|---|
-| `https://stoic-quotes.com/api/quote` | 두 Origin 모두 200, 비어 있지 않은 문자열 `text`·`author` | 두 응답 모두 `Access-Control-Allow-Origin: *` |
+| `https://www.stoic-quotes.com/api/quote` | 두 Origin 모두 200, 비어 있지 않은 문자열 `text`·`author` | 두 응답 모두 `Access-Control-Allow-Origin: *` |
 | `https://dummyjson.com/quotes/random` | 두 Origin 모두 200, 정수 `id`, 문자열 `quote`·`author` | 각각 요청한 Origin을 허용 헤더로 반환 |
 | `https://zenquotes.io/api/random` | 200, `q`·`a`·`h`를 가진 배열 | localhost Origin 요청에 허용 헤더 없음 |
 | `https://api.quotable.io/quotes/random` | curl 오류 60, 인증서 만료로 HTTP 응답 확인 불가 | 검증 불가. TLS 검증을 우회하지 않음 |
@@ -104,7 +104,7 @@ API 자체가 유료로 전환되었다거나 결제하면 해결된다는 근�
 curl --silent --show-error --connect-timeout 10 --max-time 20 \
   --header 'Origin: http://localhost:5173' \
   --dump-header - --output /dev/null \
-  https://stoic-quotes.com/api/quote
+  https://www.stoic-quotes.com/api/quote
 ```
 
 실제 앱에서는 인증 헤더나 쿠키를 붙이지 않는 단순 GET을 우선한다.
