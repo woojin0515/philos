@@ -11,7 +11,7 @@
 | 웹 앱 | `philos`, Korea Central, Linux Node.js 24 LTS |
 | App Service Plan | `plan-philos-dev`, Basic B1, 인스턴스 1 |
 | 시작 명령 | `node server.mjs` |
-| 기능 | 초기 정적 화면만. 명언·번역 API 미구현, 번역 비활성화 |
+| 기능 | Stoic Quotes 명언 API와 Azure OpenAI 번역 API. 번역은 설정 플래그로 비활성화 가능 |
 | 배포 | GitHub Actions, `development` 환경, Azure OIDC |
 
 사용자가 유료 서비스로 Philos 이름을 포함하도록 요청해 App Service로 이전했다.
@@ -21,10 +21,11 @@
 로그인한 가격 계산기에서 확인한다. 월 예산·금액 하드 캡을 구성한 상태는 아니다.
 전용 도메인 구매 없이 `philos.azurewebsites.net`을 확보했다.
 
-`server.mjs`는 의존성 없이 빌드된 `dist`의 파일만 GET·HEAD로 제공한다.
+`server.mjs`는 빌드된 `dist`의 정적 파일과 `/api/quote`, `/api/translate`를 제공한다.
 SWA 설정 파일의 보안 헤더는 Node 서버가 읽어 동일하게 적용한다.
-소스·환경파일·설정 파일 자체는 외부에 제공하지 않는다.
-후속 API를 이 서버에 추가할 수 있어 관리형 Functions는 현재 도입하지 않는다.
+클라이언트는 명언 공급자를 직접 호출하지 않으며, Azure 키도 서버 설정에서만 읽는다.
+배포 산출물에는 `server.mjs`, `server-services/`, `dist/`만 포함한다.
+외부 API 응답과 사용자 입력 크기를 제한하고, 프롬프트·모델 입력을 클라이언트에 노출하지 않는다.
 App Service는 HTTPS 전용·TLS 1.2 이상·Always On을 설정했고 FTP·SCM 기본 인증을 비활성화했다.
 
 GitHub `development` 환경의 배포 전용 Managed Identity `id-philos-deploy`를 사용한다.
@@ -38,7 +39,7 @@ Federation 대상은 실제 OIDC assertion에서 확인한 불변 ID 포함 subj
 CI는 린트·타입 검사·빌드 후 정적 산출물과 서버만 zip으로 업로드한다.
 
 기존 SWA의 서버 설정을 비밀 노출 없이 App Service로 복사했고
-`TRANSLATION_ENABLED=false`를 유지했다.
+`TRANSLATION_ENABLED=false`를 유지한다. 설정값은 문서·로그에 출력하지 않는다.
 기존 Free SWA는 롤백용으로 보존했지만 자동 배포 대상에서는 제외했다.
 현재 공식 주소는 위 App Service 주소다.
 Azure OpenAI 리소스·모델 배포는 변경하지 않았다.
@@ -95,8 +96,8 @@ Portal의 Custom domains에서 소유권 검증과 TLS 인증서 발급을 완�
 | 배포 유형 | GlobalStandard, 용량 1, 사용량 기반 과금. PTU 예약 아님 |
 | 확인된 처리 한도 | 배포 응답 기준 분당 요청 1회·토큰 1,000개. 금액 상한 아님 |
 | 버전 정책 | NoAutoUpgrade. 조회한 카탈로그의 퇴역일 `2027-07-13` 이전 재검토 필요 |
-| 번역 서버 | 기존 SWA 관리형 Functions 사용 예정. API 코드는 아직 미배포 |
-| 공개 번역 상태 | `TRANSLATION_ENABLED=false`. 앱에서는 아직 번역을 호출하지 않음 |
+| 번역 서버 | App Service의 Node API (`/api/translate`) |
+| 공개 번역 상태 | 서버 설정 `TRANSLATION_ENABLED`로 제어. 초기값은 `false` |
 
 기본 구독의 East US 2 모델 가용성·잔여 할당량을 조회한 뒤 생성했다.
 GlobalStandard는 전역 처리일 수 있으며 한국 내 처리만을 보장하지 않는다.
@@ -106,11 +107,11 @@ GlobalStandard는 전역 처리일 수 있으며 한국 내 처리만을 보장�
 자체 작성한 테스트 문장만 전송했고 명언을 대량 수집·번역하지 않았다.
 이 1회 성공은 명언 번역 품질 평가나 앱 통합 검증이 아니다.
 
-SWA 서버 앱 설정에 `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`,
-`AZURE_OPENAI_DEPLOYMENT`, `QUOTES_API_URL`, `TRANSLATION_ENABLED`를 준비했다.
+App Service 설정에 `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`,
+`AZURE_OPENAI_DEPLOYMENT`, `TRANSLATION_ENABLED`를 사용한다.
 기존 설정은 병합해 보존했으며 키는 메모리에서 전달해 로컬 파일·명령 인수·저장소에 기록하지 않았다.
-관리형 Functions는 별도 Function App을 생성하지 않고 API 코드를 배포할 때 사용한다.
-이 구성을 위해 추가 DB, Storage Account, Key Vault, Application Insights는 만들지 않았다.
+별도 Function App은 사용하지 않는다. 이 구성을 위해 추가 DB, Storage Account,
+Key Vault, Application Insights는 만들지 않았다.
 인증 방식·영속 저장·관측 요구가 생기면 각각 필요성을 재검토한다.
 
 Azure CLI로 리소스를 생성했으며 같은 리소스를 Azure Portal에서 관리할 수 있다.
@@ -149,9 +150,7 @@ Azure MCP의 Static Web Apps 가이드를 참고했다.
 - Azure 구독·리소스 그룹·리전·플랜·리소스 이름과 생성 권한을 확인해야 한다.
 - GitHub 연동 권한, 조직의 Actions 정책과 배포 자격 증명 관리 방식을 확인해야 한다.
 - 서버 호출이 필요한 API라면 정적 프런트엔드만의 배포 계획을 먼저 수정해야 한다.
-- Azure 번역 사용을 위해 [번역 서비스 조사](azure-translation.md)의 서버 경유안을 검토한다.
-  아래 API 위치를 비워 두는 값은 번역 없는 최소 정적 앱의 경우이며,
-  번역 기능 배포에는 Functions 호스팅·서버 설정·API 위치를 확정해야 한다.
+- Azure 번역은 App Service 서버 API를 사용하며 공개 활성화 전 비용·상한을 검토한다.
 
 ## Portal 초기 배포 절차
 
@@ -192,8 +191,8 @@ Portal의 서버용 앱 설정에 값을 추가하는 것만으로 정적 번들
 
 - Actions 실행이 성공하고 배포 URL이 HTTPS로 응답한다.
 - 실제 브라우저에서 앱이 렌더링되고 JS·CSS 자산이 정상 로드된다.
-- 명언 기능 구현 후에는 배포 Origin에서 CORS, 첫 요청·버튼·실패 UX를 확인한다.
-- 기능 구현 전 최소 앱 초기 배포라면 렌더링·자산 로드까지만 검증하고 명언 기능 미구현을 명시한다.
+- 배포 Origin에서 첫 명언 요청·버튼·번역·오류 UX를 확인한다.
+- API에 임의 번역 입력이 불가능하고 키·프롬프트가 응답·번들에 노출되지 않는지 확인한다.
 - 번들·저장소·브라우저 요청에 비밀 키가 노출되지 않는다.
 - 구독·리소스 그룹·사이트 이름·URL·배포 브랜치·배포 커밋을 비밀 없이 기록한다.
 
@@ -203,8 +202,9 @@ HTTP 응답 성공만으로 빈 화면이나 CORS 문제가 없다고 판단하�
 
 빌드 실패는 lockfile, Node.js 버전, 앱 위치와 실제 스크립트를 먼저 대조한다.
 빈 화면은 산출물 경로와 JS·CSS 로드 실패를 확인한다.
-명언 요청 실패는 배포 Origin의 CORS·API 한도·인증·응답 형식을 확인한다.
-현재 최소 화면 배포에는 명언·번역 API 호출이 없어 API 장애 처리 검증은 후속 단계다.
+명언 요청 실패는 Stoic Quotes 가용성·응답 형식을 확인한다.
+번역 오류는 Azure 응답·쿼터와 서버의 안전한 오류 변환을 확인한다.
+메모리 기반 사용량 제한은 앱 재시작 시 초기화되므로 하드 캡으로 간주하지 않는다.
 
 배포 이후 문제가 생기면 이전에 검증한 커밋으로 되돌리는 변경을 만들어 재배포한다.
 최초 배포에는 이전 정상 버전이 없으므로 원인 수정 후 다시 배포한다.

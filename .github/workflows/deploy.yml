@@ -28,11 +28,15 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
-      - run: cp server.mjs dist/server.mjs
+      - run: |
+          mkdir -p package/server-services package/dist
+          cp server.mjs package/server.mjs
+          cp server-services/quote-api.mjs package/server-services/quote-api.mjs
+          cp -R dist/. package/dist/
       - uses: actions/upload-artifact@v7
         with:
           name: site
-          path: dist
+          path: package
           if-no-files-found: error
           retention-days: 7
 
@@ -48,11 +52,8 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: site
-          path: dist
+          path: site
       - run: |
-          mkdir site
-          mv dist/server.mjs site/server.mjs
-          mv dist site/dist
           cd site
           zip -qr ../site.zip .
       - uses: azure/login@v3
