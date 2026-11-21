@@ -1,21 +1,24 @@
 :root {
-  font-family: system-ui, sans-serif;
+  font-family: Georgia, 'Times New Roman', serif;
   line-height: 1.7;
   color: #23332d;
   background: #f5f4ee;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
 }
 
 body {
   margin: 0;
   min-width: 280px;
+  min-height: 100vh;
+  font-family: system-ui, sans-serif;
 }
 
 main {
   max-width: 48rem;
-  margin: auto;
-  padding: clamp(4rem, 18vh, 12rem) 1.5rem;
+  margin: 0 auto;
+  padding: clamp(3rem, 14vh, 8rem) 1.5rem 4rem;
   overflow-wrap: anywhere;
 }
 
@@ -29,8 +32,76 @@ h1 {
   line-height: 1.4;
 }
 
+.quote {
+  margin-top: clamp(3rem, 10vh, 6rem);
+  min-height: 12rem;
+}
+
+blockquote {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  line-height: 1.5;
+}
+
+.author {
+  color: #50645a;
+  text-align: right;
+}
+
+.translation {
+  margin-top: 0.25rem;
+  font-size: clamp(1.1rem, 2.6vw, 1.4rem);
+}
+
+.translation-label {
+  margin: 2rem 0 0;
+  color: #50645a;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
+
+.quote-button {
+  min-height: 3rem;
+  padding: 0.7rem 1.25rem;
+  border: 0;
+  border-radius: 0.4rem;
+  color: #fff;
+  background: #23332d;
+  font: inherit;
+  cursor: pointer;
+}
+
+.quote-button:focus-visible,
+.text-button:focus-visible,
+.source:focus-visible {
+  outline: 3px solid #bd7c3b;
+  outline-offset: 3px;
+}
+
+.quote-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.text-button {
+  margin: 0 1rem 0 0;
+  padding: 0;
+  border: 0;
+  color: #23332d;
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.source {
+  color: #50645a;
+  font-size: 0.875rem;
+}
+
 .status {
-  margin-top: 3rem;
+  margin-top: 1rem;
   color: #50645a;
   font-size: 0.875rem;
 }

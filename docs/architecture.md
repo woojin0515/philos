@@ -12,44 +12,40 @@
 | npm | 단일 앱의 의존성과 lockfile 관리 |
 | 기본 `fetch` | 단순한 요청에 별도 데이터 라이브러리를 추가하지 않음 |
 | Oxlint + TypeScript | 템플릿 기본 린터와 타입 검사. 당초 ESLint 추천을 대체 |
-| Vitest + React Testing Library (후속) | 동작 구현 시 상태 전환 검증 |
+| Node 내장 테스트 | 서버 API·정적 응답 통합 검증 |
 | Azure App Service Linux B1 | Philos 이름의 기본 주소, Node 정적 서버 |
 
 React·TypeScript·Vite와 검사 도구를 구성했고 lockfile로 설치 버전을 관리한다.
 CI는 `.nvmrc`의 Node.js 24 LTS를 사용한다.
 초기에는 라우터, SSR, 전역 상태 라이브러리, 모노레포, DB를 도입하지 않는다.
-Azure 번역 자격 증명 보호를 위한 최소 서버 API는 검토 대상에 포함한다.
+Azure 번역 자격 증명을 보호하기 위해 App Service Node 서버에 최소 API를 둔다.
 
-## 예상 데이터 흐름
+## 데이터 흐름
 
 ```text
 화면 진입 / 버튼 클릭
-  -> 화면의 요청·상태 관리
-  -> services의 API 요청 및 응답 검증·변환
-  -> 선정할 외부 명언 API
-  -> 화면 상태 갱신
+  -> GET /api/quote
+  -> Node 서버가 Stoic Quotes 응답 검증 후 임의 티켓 발급
+  -> 화면에 영어 명언·저자 표시
+  -> POST /api/translate { quoteId }
+  -> 서버가 보관한 해당 명언만 Azure OpenAI로 번역
+  -> 한국어 자동 번역 표시
 ```
 
-화면은 공급자 응답 구조를 직접 다루지 않는다.
-API 선정 후 `services/`의 작은 함수에서 실제 필드를 화면에 필요한 형태로 변환한다.
-지금은 API별 SDK, 교체 가능한 provider 프레임워크, 범용 저장소 계층을 만들지 않는다.
+화면은 공급자 응답 구조를 직접 다루지 않고 `src/services/quotes.ts`에서 API 응답을 검증한다.
+명언 티켓은 서버 메모리에 10분 동안 보관되고 번역 성공 후 폐기된다.
+자유 입력 문자열, 사용자 제공 URL, 모델 선택, 프롬프트는 번역 API에 전달되지 않는다.
+API별 SDK, 교체 가능한 provider 프레임워크, 범용 저장소 계층은 도입하지 않는다.
 화면의 상태 규칙은 [제품 기획](product.md), 데이터 요구사항은
 [명언 데이터 조달](quote-data.md)을 따른다.
 
-브라우저 직접 호출은 CORS와 키 노출 문제가 없는 API를 선정했을 때의 기본안이다.
-개발용 공급자는 Stoic Quotes이며 인증 없는 직접 호출과 CORS 응답을 확인했다.
-`.env.example`의 `VITE_QUOTES_API_URL`은 공개 주소 예시이며 초기 화면에서는 사용하지 않는다.
-영어 위·한국어 해석 아래 표시를 위해 번역 경로를 별도로 결정해야 한다.
-공개 서비스 적용 전 콘텐츠 권리와 실제 브라우저 동작을 확인한다.
-비밀 키나 서버 요청이 필요한 경우 Azure Functions 등 얇은 서버 경유 구조를 재검토하고,
-배포 구조를 함께 갱신한다. 이 대안은 현재 확정되거나 구현된 구조가 아니다.
-
-Azure 번역 사용 요구에 따른 최신 권장 흐름은
-`브라우저 -> 자체 Functions API -> 명언 조회 + Azure 번역 -> 응답`이다.
-위 직접 호출 흐름은 영어 공급자 조사 당시의 기본안이다.
-현재 서버는 App Service의 `server.mjs`이며 빌드 산출물만 제공한다. 명언·번역 API 코드는 아직 없다.
-Azure OpenAI와 `gpt-5-mini` 개발 배포, 서버 환경설정은 준비했고 공개 번역은 비활성화했다.
-리소스·처리량·키 관리 상태는 [배포 가이드](deployment.md)를 따른다.
+Stoic Quotes는 서버에서만 호출해 응답 필드를 검증하고 클라이언트가 임의 원문을 제공하지 못하게 한다.
+Azure OpenAI 키는 App Service 설정에만 보관한다. `TRANSLATION_ENABLED` 기본값은 꺼짐이다.
+일일 전역 호출 상한(프로세스당 50회), 요청 간격(60초), 진행 중 단일 번역,
+명언별 최대 재시도 2회, 입력·출력 길이와 시간 제한을 적용한다.
+이 메모리 기반 제한은 프로세스 재시작 시 초기화되며 다중 인스턴스 간 공유되지 않는다.
+공개 트래픽을 받기 전에 운영 규모에 맞는 영속 제한 및 예산을 검토한다.
+Azure 리소스·가격·설정은 [배포 가이드](deployment.md)를 따른다.
 
 ## 현재 구조
 
@@ -69,6 +65,8 @@ philos/
 ├── vite.config.ts
 ├── server.mjs
 ├── server.test.mjs
+├── server-services/
+│   └── quote-api.mjs
 ├── README.md
 ├── docs/
 │   ├── product.md
@@ -82,6 +80,8 @@ philos/
 └── src/
     ├── App.tsx
     ├── main.tsx
+    ├── services/
+    │   └── quotes.ts
     ├── components/
     │   └── .gitkeep
     ├── services/
@@ -99,7 +99,7 @@ Git은 빈 디렉터리를 추적하지 않으므로 `.gitkeep`으로 폴더를 
 |---|---|
 | `public/` | 빌드 시 그대로 복사할 정적 파일 |
 | `src/components/` | 명언 표시·버튼 등 재사용이 필요한 화면 요소 |
-| `src/services/` | 명언 요청, 응답 검증·변환 |
+| `src/services/` | 앱 API 요청과 응답 검증·변환 |
 | `src/styles/` | 기본 스타일과 화면 스타일 |
 | `src/types/` | 여러 파일에서 공유할 데이터 타입. 지역 타입은 사용하는 파일에 유지 |
 
@@ -108,7 +108,7 @@ Git은 빈 디렉터리를 추적하지 않으므로 `.gitkeep`으로 폴더를 
 앱 진입점·패키지·Vite·TypeScript·Oxlint·GitHub Actions 설정은 초기 배포에 포함했다.
 `.gitignore`는 공개 저장소 게시 전에 추가했고 개발 세팅 시 필요한 규칙을 보완한다.
 테스트는 대상 코드 옆에 두며 별도 빈 테스트 트리는 만들지 않는다.
-명언·번역 API와 기능 테스트는 후속 구현에서 추가한다.
+명언·번역 API와 서버 통합 테스트를 구현했다. 별도 UI 테스트 러너는 아직 추가하지 않았다.
 GitHub Actions는 OIDC로 App Service에 배포하며 자세한 구성은 [배포 가이드](deployment.md)를 따른다.
 
 현재 실행 가능한 npm 스크립트는 [개발 가이드](development.md)를 따른다.

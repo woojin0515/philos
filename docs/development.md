@@ -4,18 +4,18 @@
 
 ## 현재 실행 환경
 
-React + TypeScript + Vite 최소 앱과 npm lockfile이 있다.
+React + TypeScript + Vite 앱, App Service Node API, npm lockfile이 있다.
 Node.js 24 LTS를 `.nvmrc`와 CI에서 사용하며 로컬 초기 검증은 Node.js 26 환경에서 수행했다.
 설치: `npm ci`. 개발 서버: `npm run dev` (Vite가 출력하는 주소를 사용).
 실제 설치 버전은 `package-lock.json`을 따른다.
-현재는 정적인 초기 안내 화면뿐이며 명언·번역 기능은 없다.
+Vite 개발 서버는 `/api`를 `localhost:8080`으로 프록시한다.
+두 터미널에서 `npm run dev:api`와 `npm run dev`를 실행하면 앱과 API를 함께 확인할 수 있다.
 최신 create-vite의 React TypeScript 템플릿이 제공하는 Oxlint를 사용한다.
 당초 ESLint 추천안과 달라졌지만 같은 목적의 기본 검사에 별도 도구를 추가하지 않았다.
 
 ## 초기 세팅 기록과 후속 작업
 
-1. [선택한 Stoic Quotes와 번역 검토](quote-data.md)를 바탕으로 한국어 번역 경로·비용·이용 조건과 호출 구조를 결정한다.
-   번역은 [Azure 서비스 비교](azure-translation.md)를 따르며 서버 인증·호스팅을 함께 확정한다.
+1. [선택한 Stoic Quotes와 번역 검토](quote-data.md)를 바탕으로 API를 연결하고 Azure OpenAI 번역 경로를 구성했다.
 2. 지원 중인 Node.js LTS와 npm, Vite 및 주요 라이브러리의 호환 버전을 확인한다.
 3. 기존 README·문서·폴더를 덮어쓰지 않도록 React + TypeScript 프로젝트 설정을 통합한다.
 4. 기본 CSS, Oxlint, 타입 검사를 구성했다. Vitest + React Testing Library는 실제 동작 구현 시 추가한다.
@@ -23,7 +23,7 @@ Node.js 24 LTS를 `.nvmrc`와 CI에서 사용하며 로컬 초기 검증은 Node
 6. 기능 구현 이전의 최소 앱으로 개발 서버·빌드·검증 명령이 동작하는지 확인한다.
 
 2·3·5·6의 최소 프로젝트 구성은 초기 배포에서 수행했다.
-1의 구체 LLM 경로·서버 호스팅 결정은 후속 작업이다.
+1의 API·LLM 연결과 App Service 서버 경유 구조도 구현했다.
 개발 서버의 포트와 로컬 URL도 실제 구성 후 기록한다.
 
 ## 실행·검증 스크립트
@@ -33,19 +33,19 @@ Node.js 24 LTS를 `.nvmrc`와 CI에서 사용하며 로컬 초기 검증은 Node
 | 명령 | 목적 |
 |---|---|
 | `npm run dev` | 로컬 개발 서버 |
+| `npm run dev:api` | 빌드 후 로컬 Node API 서버 실행. `npm run dev`와 함께 사용 |
 | `npm start` | `dist`를 제공하는 Node 서버. 먼저 빌드 필요, 기본 포트 8080 |
 | `npm run build` | 정적 배포 산출물 `dist` 생성 |
 | `npm run preview` | 빌드 결과 로컬 확인 |
 | `npm run lint` | Oxlint 검사 |
 | `npm run typecheck` | TypeScript 타입 검사 |
-| `npm test` | 빌드 후 Node 서버 통합 테스트. 먼저 `npm run build` 필요 |
+| `npm test` | Node 서버 통합 테스트. 먼저 `npm run build` 필요 |
 
 lockfile 생성 후 재현 가능한 설치에는 `npm ci`를 사용한다.
 도구별 실제 옵션은 설치된 버전에 맞춰 검증한다.
 정적 서버는 Node 내장 테스트로 파일 제공·보안 헤더·비공개 경로·메서드를 검증한다.
 앱 UI 테스트용 외부 러너는 아직 추가하지 않았다.
-초기 배포는 린트·타입 검사·빌드와 실제 배포 화면·정적 자산 확인으로 검증한다.
-App Service 패키지는 `server.mjs`와 `dist/`만 포함하며 런타임 의존성 설치가 필요 없다.
+App Service 패키지는 `server.mjs`, `server-services/`, `dist/`를 포함하며 런타임 의존성 설치가 필요 없다.
 
 ## 코드와 테스트 배치
 
@@ -54,7 +54,7 @@ App Service 패키지는 `server.mjs`와 `dist/`만 포함하며 런타임 의�
 테스트는 대상 코드 옆의 `*.test.ts` 또는 `*.test.tsx`에 둔다.
 외부 API의 실시간 가용성에 단위 테스트를 의존시키지 않고 응답을 모의한다.
 
-기능 구현 시 [제품 기획의 상태 전환](product.md)에 집중해 테스트한다.
+기능 회귀 시 [제품 기획의 상태 전환](product.md)에 집중해 테스트한다.
 요청 중 중복 호출 방지, 실패 시 기존 명언 유지, 빈 응답과 재시도처럼
 실제 동작을 검증하며 구현 내부 구조나 상수만 확인하는 테스트는 피한다.
 
@@ -62,8 +62,7 @@ App Service 패키지는 `server.mjs`와 `dist/`만 포함하며 런타임 의�
 
 - Vite의 `VITE_*` 환경변수는 브라우저 번들에 공개된다. 비밀 API 키를 넣지 않는다.
 - 비밀 키를 소스, 문서, 테스트 데이터, URL, 로그 또는 Git 기록에 남기지 않는다.
-- `.env.example`에는 공개 명언 API 주소만 기록했다. Vite 앱 구현 시 이 변수를 읽도록 연결해야 한다.
-  공개 설정 외에 비밀이 필요해지면 값 없는 예시 변수와 로컬 비밀 파일을 구분한다.
+- `.env.example`에는 서버 전용 설정 이름과 가짜 예시만 기록했다.
   실제 로컬 비밀 파일은 기존 `.gitignore`로 제외한다.
 - `.gitignore`는 `.env`와 변형 파일, 로컬 `.npmrc`, 개인 키·인증서,
   Azure 로컬 설정·도구 상태를 제외한다. `.env.example`과 `.env.*.example`은
