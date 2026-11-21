@@ -145,7 +145,7 @@ export default function App() {
               <div className="translation-block" aria-live="polite">
                 {translationLoading && (
                   <p className="translation-status" role="status">
-                    한국어로 옮기는 중…
+                    아직 번역본을 생성하지 못했어요.
                   </p>
                 )}
                 {translation && (

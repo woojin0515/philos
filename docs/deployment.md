@@ -39,8 +39,9 @@ Federation 대상은 실제 OIDC assertion에서 확인한 불변 ID 포함 subj
 CI는 린트·타입 검사·빌드 후 정적 산출물과 서버만 zip으로 업로드한다.
 
 기존 SWA의 서버 설정을 비밀 노출 없이 App Service로 복사했다.
-번역 UI 배포 후 App Service의 `TRANSLATION_ENABLED=true`를 설정해 공개 번역을 활성화한다.
+사용자 요청에 따라 Azure CLI로 App Service의 `TRANSLATION_ENABLED=true`를 설정해 공개 번역을 활성화했다.
 설정값은 문서·로그에 출력하지 않는다. Azure OpenAI 호출은 사용자가 명언을 요청한 경우에만 발생한다.
+설정 활성화 후 실제 사이트에서 Stoic Quotes 명언의 영어→한국어 번역 응답을 확인했다.
 서버에는 명언별 티켓, 최소 1분 간격, 프로세스당 일일 50회 번역 제한이 있다.
 이 메모리 기반 일일 제한은 앱 재시작·다중 인스턴스에서 초기화·분리되므로 비용 하드 캡이 아니다.
 모델 배포에서 확인한 처리량은 1 RPM·1,000 TPM이며, 계약 단가·월 예산은 별도 확인이 필요하다.
@@ -101,15 +102,15 @@ Portal의 Custom domains에서 소유권 검증과 TLS 인증서 발급을 완�
 | 확인된 처리 한도 | 배포 응답 기준 분당 요청 1회·토큰 1,000개. 금액 상한 아님 |
 | 버전 정책 | NoAutoUpgrade. 조회한 카탈로그의 퇴역일 `2027-07-13` 이전 재검토 필요 |
 | 번역 서버 | App Service의 Node API (`/api/translate`) |
-| 공개 번역 상태 | 서버 설정 `TRANSLATION_ENABLED`로 제어. 초기값은 `false` |
+| 공개 번역 상태 | App Service의 `TRANSLATION_ENABLED=true`로 활성화 |
 
 기본 구독의 East US 2 모델 가용성·잔여 할당량을 조회한 뒤 생성했다.
 GlobalStandard는 전역 처리일 수 있으며 한국 내 처리만을 보장하지 않는다.
 작은 개발 한도는 공개 서비스 트래픽에 부족하므로 사용자별·전체 호출 제한과 월 예산을 정한 후 확대한다.
 구독·계약 단가와 월 예산은 아직 확정하지 않았다. 비용 알림·하드 캡도 구성하지 않았다.
 단발 번역 검증은 과금되는 실제 호출이며 입력 29·완료 81 토큰(추론 64 포함), 합계 110 토큰을 반환했다.
-자체 작성한 테스트 문장만 전송했고 명언을 대량 수집·번역하지 않았다.
-이 1회 성공은 명언 번역 품질 평가나 앱 통합 검증이 아니다.
+추가로 운영 웹앱에서 명언을 발급해 Azure OpenAI 번역 결과를 확인했다.
+자체 작성한 테스트 문장과 사용자가 요청한 명언 번역 검증 외에 대량 수집·번역은 수행하지 않았다.
 
 App Service 설정에 `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`,
 `AZURE_OPENAI_DEPLOYMENT`, `TRANSLATION_ENABLED`를 사용한다.

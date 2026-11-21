@@ -124,6 +124,7 @@ test('issues quote tickets and only translates their server-held quote text', as
       const payload = JSON.parse(calls[1].options.body)
       assert.equal(payload.messages[1].content, quote.text)
       assert.equal(payload.model, translationEnv.AZURE_OPENAI_DEPLOYMENT)
+      assert.equal(payload.max_completion_tokens, 600)
       assert.equal(calls[1].options.headers['api-key'], translationEnv.AZURE_OPENAI_API_KEY)
 
       const replay = await fetch(`${origin}/api/translate`, {
@@ -133,6 +134,33 @@ test('issues quote tickets and only translates their server-held quote text', as
       })
       assert.equal(replay.status, 404)
       assert.equal(calls.length, 2)
+    },
+  )
+})
+
+test('does not return truncated Azure completions as translations', async () => {
+  await withServer(
+    {
+      env: translationEnv,
+      fetchImpl: async (url) => {
+        if (String(url) === 'https://www.stoic-quotes.com/api/quote') return quoteResponse()
+        return new Response(
+          JSON.stringify({
+            choices: [{ finish_reason: 'length', message: { content: '아직 끝나지 않은 번역' } }],
+          }),
+          { headers: { 'Content-Type': 'application/json' } },
+        )
+      },
+    },
+    async (origin) => {
+      const quote = await fetch(`${origin}/api/quote`).then((response) => response.json())
+      const response = await fetch(`${origin}/api/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quoteId: quote.quoteId }),
+      })
+      assert.equal(response.status, 502)
+      assert.deepEqual(await response.json(), { error: 'translation_failed' })
     },
   )
 })

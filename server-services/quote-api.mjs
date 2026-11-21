@@ -8,7 +8,7 @@ const MAX_QUOTE_TICKETS = 250
 const MAX_TRANSLATIONS_PER_DAY = 50
 const MIN_TRANSLATION_INTERVAL_MS = 60_000
 const MAX_TRANSLATION_ATTEMPTS_PER_QUOTE = 2
-const MAX_OUTPUT_TOKENS = 200
+const MAX_OUTPUT_TOKENS = 600
 
 const TRANSLATION_INSTRUCTIONS = [
   'Translate the provided English philosophical quotation into faithful, natural Korean.',
