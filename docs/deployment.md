@@ -11,7 +11,7 @@
 | 웹 앱 | `philos`, Korea Central, Linux Node.js 24 LTS |
 | App Service Plan | `plan-philos-dev`, Basic B1, 인스턴스 1 |
 | 시작 명령 | `node server.mjs` |
-| 기능 | 스와이프 완료 후 Stoic Quotes 명언을 조회하고, 정적 번역 사전의 한국어 번역 또는 미등록 안내를 표시 |
+| 기능 | 스와이프 완료 후 로컬 100개 명언 코퍼스에서 영어 문장과 한국어 번역을 표시 |
 | 배포 | GitHub Actions, `development` 환경, Azure OIDC |
 
 사용자가 유료 서비스로 Philos 이름을 포함하도록 요청해 App Service로 이전했다.
@@ -23,9 +23,9 @@
 
 `server.mjs`는 빌드된 `dist`의 정적 파일과 `/api/quote`를 제공한다.
 SWA 설정 파일의 보안 헤더는 Node 서버가 읽어 동일하게 적용한다.
-클라이언트는 명언 공급자를 직접 호출하지 않는다. 번역은 클라이언트의 정적 사전에서 찾으며 외부 번역 호출은 없다.
-배포 산출물에는 `server.mjs`, `server-services/`, `dist/`만 포함한다.
-외부 API 응답 크기와 형식을 제한한다.
+Stoic Quotes API는 초기 데이터 수집에만 사용하며 배포 앱은 외부 명언·번역 API를 호출하지 않는다.
+배포 산출물에는 `server.mjs`, `server-services/`, `src/services/quote-corpus.json`,
+`src/services/quote-translations.js`, `dist/`가 포함된다.
 App Service는 HTTPS 전용·TLS 1.2 이상·Always On을 설정했고 FTP·SCM 기본 인증을 비활성화했다.
 
 GitHub `development` 환경의 배포 전용 Managed Identity `id-philos-deploy`를 사용한다.
@@ -41,7 +41,7 @@ CI는 린트·타입 검사·빌드 후 정적 산출물과 서버만 zip으로 
 Azure OpenAI 번역은 응답 지연과 반복 호출 과금 방지를 위해 현재 앱 경로에서 제거했다.
 Azure CLI로 App Service의 `TRANSLATION_ENABLED=false`를 설정하고 앱 설정에서 API 키를 제거했다.
 Azure OpenAI 리소스·모델 배포는 남아 있지만 앱은 모델 요청을 보내지 않는다.
-한국어 번역은 정적 사전에서 즉시 조회하며 미등록 문장에 재시도 버튼을 제공하지 않는다.
+한국어 번역은 정적 데이터에서 즉시 조회하며 앱은 현재 번역된 100개 문장만 선택한다.
 기존 Free SWA는 롤백용으로 보존했지만 자동 배포 대상에서는 제외했다.
 현재 공식 주소는 위 App Service 주소다.
 Azure OpenAI 리소스·모델 배포는 변경하지 않았다.
@@ -108,7 +108,7 @@ GlobalStandard는 전역 처리일 수 있으며 한국 내 처리만을 보장�
 설정 활성화 당시 실제 웹앱에서도 명언 번역을 검증했다.
 
 `philos-translate` 모델 배포 기록은 과거 비교·시험 목적으로 보존한다.
-정적 번역 사전은 `src/services/quote-translations.js`에서 관리한다.
+명언·번역 데이터는 `src/services/quote-corpus.json`과 `src/services/quote-translations.js`에서 관리한다.
 별도 Function App은 사용하지 않는다. 이 구성을 위해 추가 DB, Storage Account,
 Key Vault, Application Insights는 만들지 않았다.
 인증 방식·영속 저장·관측 요구가 생기면 각각 필요성을 재검토한다.
@@ -201,8 +201,8 @@ HTTP 응답 성공만으로 빈 화면이나 CORS 문제가 없다고 판단하�
 
 빌드 실패는 lockfile, Node.js 버전, 앱 위치와 실제 스크립트를 먼저 대조한다.
 빈 화면은 산출물 경로와 JS·CSS 로드 실패를 확인한다.
-명언 요청 실패는 Stoic Quotes 가용성·응답 형식을 확인한다.
-번역 오류는 Azure 응답·쿼터와 서버의 안전한 오류 변환을 확인한다.
+명언 요청 실패는 로컬 코퍼스가 배포 산출물에 포함됐는지 확인한다.
+화면 번역은 정적 조회이므로 Azure 응답·쿼터를 사용하지 않는다.
 메모리 기반 사용량 제한은 앱 재시작 시 초기화되므로 하드 캡으로 간주하지 않는다.
 
 배포 이후 문제가 생기면 이전에 검증한 커밋으로 되돌리는 변경을 만들어 재배포한다.
