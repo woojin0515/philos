@@ -11,7 +11,7 @@
 | 웹 앱 | `philos`, Korea Central, Linux Node.js 24 LTS |
 | App Service Plan | `plan-philos-dev`, Basic B1, 인스턴스 1 |
 | 시작 명령 | `node server.mjs` |
-| 기능 | 사용자가 버튼을 누르면 Stoic Quotes에서 명언을 조회. UI의 LLM 번역 호출은 후속 단계 |
+| 기능 | 스와이프 완료 후 Stoic Quotes 명언을 조회하고, Azure OpenAI 한국어 AI 번역을 표시 |
 | 배포 | GitHub Actions, `development` 환경, Azure OIDC |
 
 사용자가 유료 서비스로 Philos 이름을 포함하도록 요청해 App Service로 이전했다.
@@ -38,8 +38,12 @@ Federation 대상은 실제 OIDC assertion에서 확인한 불변 ID 포함 subj
 이 값들은 GitHub 환경 Variables에 저장하며 클라이언트 비밀·게시 프로필을 사용하지 않는다.
 CI는 린트·타입 검사·빌드 후 정적 산출물과 서버만 zip으로 업로드한다.
 
-기존 SWA의 서버 설정을 비밀 노출 없이 App Service로 복사했고
-`TRANSLATION_ENABLED=false`를 유지한다. 설정값은 문서·로그에 출력하지 않는다.
+기존 SWA의 서버 설정을 비밀 노출 없이 App Service로 복사했다.
+번역 UI 배포 후 App Service의 `TRANSLATION_ENABLED=true`를 설정해 공개 번역을 활성화한다.
+설정값은 문서·로그에 출력하지 않는다. Azure OpenAI 호출은 사용자가 명언을 요청한 경우에만 발생한다.
+서버에는 명언별 티켓, 최소 1분 간격, 프로세스당 일일 50회 번역 제한이 있다.
+이 메모리 기반 일일 제한은 앱 재시작·다중 인스턴스에서 초기화·분리되므로 비용 하드 캡이 아니다.
+모델 배포에서 확인한 처리량은 1 RPM·1,000 TPM이며, 계약 단가·월 예산은 별도 확인이 필요하다.
 기존 Free SWA는 롤백용으로 보존했지만 자동 배포 대상에서는 제외했다.
 현재 공식 주소는 위 App Service 주소다.
 Azure OpenAI 리소스·모델 배포는 변경하지 않았다.
