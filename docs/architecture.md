@@ -25,22 +25,26 @@ Azure 번역 자격 증명을 보호하기 위해 App Service Node 서버에 최
 ```text
 화면 진입
   -> 중앙 `생각해보기` 문구와 글래스형 버튼만 표시 (API 요청 없음)
-사용자 버튼 클릭
+사용자 스와이프 완료
   -> GET /api/quote
   -> Node 서버가 Stoic Quotes 응답 검증 후 임의 티켓 발급
   -> 화면에 영어 명언·저자 표시
+  -> POST /api/translate {quoteId}
+  -> Node 서버가 티켓의 원문만 Azure OpenAI에 전달하고 결과 검증
+  -> 영어 명언 아래에 한국어 AI 번역 표시
 ```
 
 화면은 공급자 응답 구조를 직접 다루지 않고 `src/services/quotes.ts`에서 API 응답을 검증한다.
-LLM 번역은 후속 기능이다. 서버에 번역 API 코드는 있지만 `TRANSLATION_ENABLED`가 꺼져 있어 현재 화면은 호출하지 않는다.
+사용자가 명언을 요청할 때 서버의 `/api/translate`가 Azure OpenAI 번역을 호출한다.
+App Service의 `TRANSLATION_ENABLED=true`가 활성화되어 있으며, 설정이 없거나 다른 값이면 호출을 차단한다.
 명언 티켓은 서버 메모리에 10분 동안 보관된다.
 API별 SDK, 교체 가능한 provider 프레임워크, 범용 저장소 계층은 도입하지 않는다.
 화면의 상태 규칙은 [제품 기획](product.md), 데이터 요구사항은
 [명언 데이터 조달](quote-data.md)을 따른다.
 
 Stoic Quotes는 서버에서만 호출해 응답 필드를 검증하고 클라이언트가 임의 원문을 제공하지 못하게 한다.
-Azure OpenAI 키는 App Service 설정에만 보관한다. `TRANSLATION_ENABLED` 기본값은 꺼짐이다.
-일일 전역 호출 상한(프로세스당 50회), 요청 간격(60초), 진행 중 단일 번역,
+Azure OpenAI 키는 App Service 설정에만 보관한다. `TRANSLATION_ENABLED`는 명시적으로 `true`일 때만 활성화된다.
+일일 전역 호출 상한(프로세스당 50회), 요청 간격(60초), Azure OpenAI 완료 토큰 상한(600개), 진행 중 단일 번역,
 명언별 최대 재시도 2회, 입력·출력 길이와 시간 제한을 적용한다.
 이 메모리 기반 제한은 프로세스 재시작 시 초기화되며 다중 인스턴스 간 공유되지 않는다.
 공개 트래픽을 받기 전에 운영 규모에 맞는 영속 제한 및 예산을 검토한다.
