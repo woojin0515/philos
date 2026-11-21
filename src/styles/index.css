@@ -71,6 +71,15 @@ a {
   letter-spacing: 0.06em;
 }
 
+.card-description {
+  max-width: 22rem;
+  margin: 0.1rem 0 0;
+  color: rgb(239 232 255 / 70%);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
 .quote-scene {
   position: relative;
   display: grid;
@@ -335,15 +344,6 @@ a {
   transition: none;
 }
 
-.swipe-handle .spinner {
-  width: 1.1rem;
-  height: 1.1rem;
-  border: 2px solid rgb(42 35 65 / 22%);
-  border-top-color: #413065;
-  border-radius: 50%;
-  animation: spin 850ms linear infinite;
-}
-
 .spinner {
   width: 1.1rem;
   height: 1.1rem;
@@ -415,6 +415,76 @@ blockquote {
   color: #c1d1d7;
   font-size: 0.9rem;
   letter-spacing: 0.08em;
+}
+
+.translation-block {
+  min-height: 2.25rem;
+  margin-top: 1.8rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid rgb(245 238 255 / 15%);
+  text-align: left;
+}
+
+.translation-status,
+.translation-label,
+.translation-error p {
+  margin: 0;
+  color: #c9bddf;
+  font-size: 0.78rem;
+}
+
+.translation-content {
+  animation: text-appear 420ms ease both;
+}
+
+.translation-label {
+  color: #c9b8ef;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.korean-translation {
+  margin: 0.7rem 0 0;
+  color: #f3edff;
+  font-size: clamp(1.05rem, 3vw, 1.3rem);
+  line-height: 1.75;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.translation-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.translation-error p {
+  color: #e4d8f6;
+  line-height: 1.5;
+}
+
+.translation-retry {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgb(245 238 255 / 20%);
+  border-radius: 999px;
+  color: #f4edff;
+  background: rgb(255 255 255 / 7%);
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.translation-retry:focus-visible {
+  outline: 2px solid #d8c6ff;
+  outline-offset: 3px;
+}
+
+.translation-retry:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .quote-actions {
@@ -560,6 +630,11 @@ blockquote {
   .quote-content {
     padding: 2.25rem 1.5rem;
     border-radius: 30px;
+  }
+
+  .translation-block {
+    margin-top: 1.4rem;
+    padding-top: 1.1rem;
   }
 
   .quote-actions {
