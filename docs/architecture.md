@@ -18,7 +18,7 @@
 React·TypeScript·Vite와 검사 도구를 구성했고 lockfile로 설치 버전을 관리한다.
 CI는 `.nvmrc`의 Node.js 24 LTS를 사용한다.
 초기에는 라우터, SSR, 전역 상태 라이브러리, 모노레포, DB를 도입하지 않는다.
-Azure 번역 자격 증명을 보호하기 위해 App Service Node 서버에 최소 API를 둔다.
+App Service Node 서버는 배포된 정적 앱과 명언 API를 제공한다.
 
 ## 데이터 흐름
 
@@ -27,21 +27,20 @@ Azure 번역 자격 증명을 보호하기 위해 App Service Node 서버에 최
   -> 중앙 `생각해보기` 문구와 글래스형 버튼만 표시 (API 요청 없음)
 사용자 스와이프 완료
   -> GET /api/quote
-  -> Node 서버가 Stoic Quotes 응답 검증
+  -> Node 서버가 로컬 100개 명언 코퍼스에서 선택
   -> 화면에 영어 명언·저자 표시
-  -> 클라이언트가 정적 번역 사전에서 문장 조회
-  -> 등록된 번역 또는 "아직 번역본을 생성하지 못했어요." 표시
+  -> 클라이언트가 정적 번역 사전에서 한국어 번역 조회
 ```
 
 화면은 공급자 응답 구조를 직접 다루지 않고 `src/services/quotes.ts`에서 API 응답을 검증한다.
-`src/services/quote-translations.js`는 문장 대소문자·공백·문장부호를 정규화해 준비된 번역을 찾는다.
-번역 조회는 로컬 동작이며 Azure OpenAI나 번역 API를 호출하지 않는다.
+`src/services/quote-corpus.json`과 `src/services/quote-translations.js`가 100개 문장과 번역을 관리한다.
+명언 선택과 번역 조회는 로컬 데이터로 처리하며 Stoic Quotes·Azure OpenAI·번역 API를 호출하지 않는다.
 API별 SDK, 교체 가능한 provider 프레임워크, 범용 저장소 계층은 도입하지 않는다.
 화면의 상태 규칙은 [제품 기획](product.md), 데이터 요구사항은
 [명언 데이터 조달](quote-data.md)을 따른다.
 
-Stoic Quotes는 서버에서만 호출해 응답 필드를 검증한다.
-AI 번역 API와 명언 티켓을 제거했으며 번역 횟수 제한이나 재시도 정책은 필요하지 않다.
+Stoic Quotes는 초기 데이터 출처이며 런타임 공급자가 아니다.
+AI 번역 API와 명언 티켓은 없으며 방문·재시도에 따른 외부 번역 호출도 발생하지 않는다.
 Azure 리소스·가격·설정은 [배포 가이드](deployment.md)를 따른다.
 
 ## 현재 구조
