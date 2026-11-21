@@ -23,18 +23,17 @@ Azure 번역 자격 증명을 보호하기 위해 App Service Node 서버에 최
 ## 데이터 흐름
 
 ```text
-화면 진입 / 버튼 클릭
+화면 진입
+  -> 중앙 `생각해보기` 문구와 버튼만 표시 (API 요청 없음)
+사용자 버튼 클릭
   -> GET /api/quote
   -> Node 서버가 Stoic Quotes 응답 검증 후 임의 티켓 발급
   -> 화면에 영어 명언·저자 표시
-  -> POST /api/translate { quoteId }
-  -> 서버가 보관한 해당 명언만 Azure OpenAI로 번역
-  -> 한국어 자동 번역 표시
 ```
 
 화면은 공급자 응답 구조를 직접 다루지 않고 `src/services/quotes.ts`에서 API 응답을 검증한다.
-명언 티켓은 서버 메모리에 10분 동안 보관되고 번역 성공 후 폐기된다.
-자유 입력 문자열, 사용자 제공 URL, 모델 선택, 프롬프트는 번역 API에 전달되지 않는다.
+LLM 번역은 후속 기능이다. 서버에 번역 API 코드는 있지만 `TRANSLATION_ENABLED`가 꺼져 있어 현재 화면은 호출하지 않는다.
+명언 티켓은 서버 메모리에 10분 동안 보관된다.
 API별 SDK, 교체 가능한 provider 프레임워크, 범용 저장소 계층은 도입하지 않는다.
 화면의 상태 규칙은 [제품 기획](product.md), 데이터 요구사항은
 [명언 데이터 조달](quote-data.md)을 따른다.
@@ -80,12 +79,10 @@ philos/
 └── src/
     ├── App.tsx
     ├── main.tsx
-    ├── services/
-    │   └── quotes.ts
     ├── components/
     │   └── .gitkeep
     ├── services/
-    │   └── .gitkeep
+    │   └── quotes.ts
     ├── styles/
     │   └── index.css
     └── types/
@@ -108,7 +105,7 @@ Git은 빈 디렉터리를 추적하지 않으므로 `.gitkeep`으로 폴더를 
 앱 진입점·패키지·Vite·TypeScript·Oxlint·GitHub Actions 설정은 초기 배포에 포함했다.
 `.gitignore`는 공개 저장소 게시 전에 추가했고 개발 세팅 시 필요한 규칙을 보완한다.
 테스트는 대상 코드 옆에 두며 별도 빈 테스트 트리는 만들지 않는다.
-명언·번역 API와 서버 통합 테스트를 구현했다. 별도 UI 테스트 러너는 아직 추가하지 않았다.
+명언 API와 서버 통합 테스트를 구현했다. 번역 UI·호출은 후속 작업이며 별도 UI 테스트 러너는 아직 추가하지 않았다.
 GitHub Actions는 OIDC로 App Service에 배포하며 자세한 구성은 [배포 가이드](deployment.md)를 따른다.
 
 현재 실행 가능한 npm 스크립트는 [개발 가이드](development.md)를 따른다.
