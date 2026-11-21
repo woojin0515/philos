@@ -115,6 +115,15 @@ test('looks up translations regardless of case, punctuation, and whitespace', ()
   assert.equal(findQuoteTranslation('A quote without a reviewed translation.'), null)
 })
 
+test('keeps replacement quote translations aligned with their source text', () => {
+  assert.equal(
+    findQuoteTranslation(
+      'Nowhere you can go is more peaceful—more free of interruptions—than your own soul.',
+    ),
+    '네 영혼보다 더 평온하고 방해받지 않는 곳은 어디에도 없다.',
+  )
+})
+
 test('rejects cross-origin quote requests', async () => {
   await withServer(async (origin) => {
     const crossOrigin = await fetch(`${origin}/api/quote`, {
