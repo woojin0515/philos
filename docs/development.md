@@ -15,7 +15,7 @@ Vite 개발 서버는 `/api`를 `localhost:8080`으로 프록시한다.
 
 ## 초기 세팅 기록과 후속 작업
 
-1. [선택한 Stoic Quotes와 번역 검토](quote-data.md)를 바탕으로 API를 연결하고 Azure OpenAI 번역 경로를 구성했다.
+1. [선택한 Stoic Quotes와 번역 검토](quote-data.md)를 바탕으로 API를 연결하고 검수한 문장을 정적 번역 사전에 등록한다.
 2. 지원 중인 Node.js LTS와 npm, Vite 및 주요 라이브러리의 호환 버전을 확인한다.
 3. 기존 README·문서·폴더를 덮어쓰지 않도록 React + TypeScript 프로젝트 설정을 통합한다.
 4. 기본 CSS, Oxlint, 타입 검사를 구성했다. Vitest + React Testing Library는 실제 동작 구현 시 추가한다.

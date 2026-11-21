@@ -24,20 +24,8 @@ for (const entry of await readdir(root, { recursive: true, withFileTypes: true }
 }
 files.set('/', files.get('/index.html'))
 
-export function createServer({
-  env = process.env,
-  fetchImpl = fetch,
-  now = Date.now,
-  maxTranslationsPerDay,
-  minimumTranslationIntervalMs,
-} = {}) {
-  const quoteApi = createQuoteApi({
-    env,
-    fetchImpl,
-    now,
-    maxTranslationsPerDay,
-    minimumTranslationIntervalMs,
-  })
+export function createServer({ fetchImpl = fetch } = {}) {
+  const quoteApi = createQuoteApi({ fetchImpl })
   return createHttpServer((request, response) => {
     for (const [name, value] of Object.entries(config.globalHeaders)) {
       response.setHeader(name, value)

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { once } from 'node:events'
 import { test } from 'node:test'
 import { createServer } from './server.mjs'
+import { findQuoteTranslation } from './src/services/quote-translations.js'
 
 async function withServer(options, run) {
   const server = createServer(options)
@@ -22,22 +23,6 @@ function quoteResponse(text = 'The obstacle is the way.', author = 'Marcus Aurel
   return new Response(JSON.stringify({ text, author }), {
     headers: { 'Content-Type': 'application/json' },
   })
-}
-
-function translationResponse(translation = '장애물이 곧 길이다.') {
-  return new Response(
-    JSON.stringify({
-      choices: [{ finish_reason: 'stop', message: { content: translation } }],
-    }),
-    { headers: { 'Content-Type': 'application/json' } },
-  )
-}
-
-const translationEnv = {
-  TRANSLATION_ENABLED: 'true',
-  AZURE_OPENAI_ENDPOINT: 'https://philos.openai.azure.com',
-  AZURE_OPENAI_API_KEY: 'test-key',
-  AZURE_OPENAI_DEPLOYMENT: 'philos-translate',
 }
 
 test('serves built HTML and hashed assets with security and caching headers', async () => {
@@ -85,15 +70,13 @@ test('HEAD returns no body and unsupported methods are rejected', async () => {
   })
 })
 
-test('issues quote tickets and only translates their server-held quote text', async () => {
+test('returns a validated quote without issuing a translation ticket or calling an LLM', async () => {
   const calls = []
   await withServer(
     {
-      env: translationEnv,
-      fetchImpl: async (url, options) => {
-        calls.push({ url: String(url), options })
-        if (String(url) === 'https://www.stoic-quotes.com/api/quote') return quoteResponse()
-        return translationResponse()
+      fetchImpl: async (url) => {
+        calls.push(String(url))
+        return quoteResponse()
       },
     },
     async (origin) => {
@@ -103,128 +86,31 @@ test('issues quote tickets and only translates their server-held quote text', as
       const quote = await quoteResponse.json()
       assert.equal(quote.text, 'The obstacle is the way.')
       assert.equal(quote.author, 'Marcus Aurelius')
-      assert.match(quote.quoteId, /^[0-9a-f-]{36}$/)
+      assert.equal('quoteId' in quote, false)
       assert.equal(quote.source, 'https://www.stoic-quotes.com/')
 
-      const arbitraryText = await fetch(`${origin}/api/translate`, {
+      const removedTranslator = await fetch(`${origin}/api/translate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quoteId: quote.quoteId, text: 'Translate arbitrary text.' }),
       })
-      assert.equal(arbitraryText.status, 400)
+      assert.equal(removedTranslator.status, 404)
       assert.equal(calls.length, 1)
-
-      const translated = await fetch(`${origin}/api/translate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quoteId: quote.quoteId }),
-      })
-      assert.equal(translated.status, 200)
-      assert.deepEqual(await translated.json(), { translation: '장애물이 곧 길이다.', label: 'AI 번역' })
-      const payload = JSON.parse(calls[1].options.body)
-      assert.equal(payload.messages[1].content, quote.text)
-      assert.equal(payload.model, translationEnv.AZURE_OPENAI_DEPLOYMENT)
-      assert.equal(payload.max_completion_tokens, 600)
-      assert.equal(calls[1].options.headers['api-key'], translationEnv.AZURE_OPENAI_API_KEY)
-
-      const replay = await fetch(`${origin}/api/translate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quoteId: quote.quoteId }),
-      })
-      assert.equal(replay.status, 404)
-      assert.equal(calls.length, 2)
+      assert.deepEqual(calls, ['https://www.stoic-quotes.com/api/quote'])
     },
   )
 })
 
-test('does not return truncated Azure completions as translations', async () => {
-  await withServer(
-    {
-      env: translationEnv,
-      fetchImpl: async (url) => {
-        if (String(url) === 'https://www.stoic-quotes.com/api/quote') return quoteResponse()
-        return new Response(
-          JSON.stringify({
-            choices: [{ finish_reason: 'length', message: { content: '아직 끝나지 않은 번역' } }],
-          }),
-          { headers: { 'Content-Type': 'application/json' } },
-        )
-      },
-    },
-    async (origin) => {
-      const quote = await fetch(`${origin}/api/quote`).then((response) => response.json())
-      const response = await fetch(`${origin}/api/translate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quoteId: quote.quoteId }),
-      })
-      assert.equal(response.status, 502)
-      assert.deepEqual(await response.json(), { error: 'translation_failed' })
-    },
-  )
+test('looks up curated translations regardless of case, punctuation, and whitespace', () => {
+  const translation = '우리가 지금 하는 일은 영원에 메아리친다.'
+  assert.equal(findQuoteTranslation('What we do now echoes in eternity.'), translation)
+  assert.equal(findQuoteTranslation('  WHAT   WE DO NOW ECHOES IN ETERNITY!  '), translation)
+  assert.equal(findQuoteTranslation('A quote without a reviewed translation.'), null)
 })
 
-test('enforces interval and daily translation caps without leaking provider errors', async () => {
-  let time = Date.UTC(2026, 0, 1, 12)
-  let quoteCount = 0
-  let translationCount = 0
-  await withServer(
-    {
-      env: translationEnv,
-      now: () => time,
-      maxTranslationsPerDay: 2,
-      minimumTranslationIntervalMs: 60_000,
-      fetchImpl: async (url) => {
-        if (String(url) === 'https://www.stoic-quotes.com/api/quote') {
-          quoteCount += 1
-          return quoteResponse(`Quote ${quoteCount}`)
-        }
-        translationCount += 1
-        if (translationCount === 1) return translationResponse()
-        return new Response('sensitive provider response', { status: 401 })
-      },
-    },
-    async (origin) => {
-      const issueTicket = async () => {
-        const response = await fetch(`${origin}/api/quote`)
-        return response.json()
-      }
-      const translate = (quoteId) =>
-        fetch(`${origin}/api/translate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ quoteId }),
-        })
-
-      const first = await issueTicket()
-      assert.equal((await translate(first.quoteId)).status, 200)
-      const second = await issueTicket()
-      const intervalLimited = await translate(second.quoteId)
-      assert.equal(intervalLimited.status, 429)
-      assert.equal(intervalLimited.headers.get('retry-after'), '60')
-      assert.equal(translationCount, 1)
-
-      time += 60_001
-      const upstreamFailure = await translate(second.quoteId)
-      assert.equal(upstreamFailure.status, 502)
-      assert.doesNotMatch(await upstreamFailure.text(), /sensitive provider response|401/)
-      assert.equal(translationCount, 2)
-
-      const third = await issueTicket()
-      const dailyLimited = await translate(third.quoteId)
-      assert.equal(dailyLimited.status, 429)
-      assert.equal((await dailyLimited.json()).error, 'daily_translation_limit')
-      assert.equal(translationCount, 2)
-    },
-  )
-})
-
-test('rejects cross-origin API calls and leaves translation disabled unless explicitly enabled', async () => {
+test('rejects cross-origin quote requests', async () => {
   let quoteCalls = 0
   await withServer(
     {
-      env: { ...translationEnv, TRANSLATION_ENABLED: 'false' },
       fetchImpl: async () => {
         quoteCalls += 1
         return quoteResponse()
@@ -237,14 +123,8 @@ test('rejects cross-origin API calls and leaves translation disabled unless expl
       assert.equal(crossOrigin.status, 403)
       assert.equal(quoteCalls, 0)
 
-      const quote = await fetch(`${origin}/api/quote`).then((response) => response.json())
-      const disabled = await fetch(`${origin}/api/translate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quoteId: quote.quoteId }),
-      })
-      assert.equal(disabled.status, 503)
-      assert.equal((await disabled.json()).error, 'translation_unavailable')
+      const quote = await fetch(`${origin}/api/quote`)
+      assert.equal(quote.status, 200)
       assert.equal(quoteCalls, 1)
     },
   )

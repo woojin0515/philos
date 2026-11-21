@@ -1,5 +1,4 @@
 export interface Quote {
-  quoteId: string
   text: string
   author: string
   source: string
@@ -13,8 +12,6 @@ export async function getQuote(): Promise<Quote> {
   if (
     !data ||
     typeof data !== 'object' ||
-    !('quoteId' in data) ||
-    typeof data.quoteId !== 'string' ||
     !('text' in data) ||
     typeof data.text !== 'string' ||
     !data.text.trim() ||
@@ -27,7 +24,6 @@ export async function getQuote(): Promise<Quote> {
     throw new Error('명언 응답을 확인할 수 없습니다.')
   }
   return {
-    quoteId: data.quoteId,
     text: data.text,
     author: data.author,
     source: data.source,
