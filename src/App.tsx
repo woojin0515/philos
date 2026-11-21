@@ -22,8 +22,6 @@ export default function App() {
   return (
     <main className={`page${quote ? ' page--revealed' : ''}`}>
       <section className="experience" aria-label="오늘의 철학 명언">
-        <p className="prompt">생각해보기</p>
-
         <div className={`quote-scene${quote ? ' quote-scene--revealed' : ''}`}>
           <div className="ambient-glass ambient-glass--back" aria-hidden="true" />
           <div className="ambient-glass ambient-glass--front" aria-hidden="true" />
@@ -34,19 +32,35 @@ export default function App() {
               <p className="author">{quote.author}</p>
             </div>
           ) : (
-            <button
-              className="start-button"
-              onClick={revealQuote}
-              disabled={loading}
-              aria-busy={loading}
-            >
-              <span className="button-core">
+            <div className="home-card">
+              <header className="card-header">
+                <span className="brand-mark" aria-hidden="true">✳</span>
+                <div className="card-heading">
+                  <span className="wordmark">PHILOS</span>
+                  <p className="prompt">생각해보기</p>
+                </div>
+                <span className="card-corner" aria-hidden="true">↗</span>
+              </header>
+
+              <div className="quote-spectrum" aria-hidden="true">
+                <span className="spectrum-point" />
+                <span className="spectrum-point spectrum-point--bright" />
+                <span className="spectrum-point" />
+              </div>
+
+              <button
+                className="start-button"
+                onClick={revealQuote}
+                disabled={loading}
+                aria-busy={loading}
+              >
                 <span className="button-icon" aria-hidden="true">
-                  {loading ? <span className="spinner" /> : <span className="sparkle">✳</span>}
+                  {loading ? <span className="spinner" /> : <span>→</span>}
                 </span>
                 <span>{loading ? '잠시만요' : '한 문장 만나기'}</span>
-              </span>
-            </button>
+                <span className="button-more" aria-hidden="true">•••</span>
+              </button>
+            </div>
           )}
         </div>
 
