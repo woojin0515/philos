@@ -92,7 +92,7 @@ test('issues quote tickets and only translates their server-held quote text', as
       env: translationEnv,
       fetchImpl: async (url, options) => {
         calls.push({ url: String(url), options })
-        if (String(url) === 'https://stoic-quotes.com/api/quote') return quoteResponse()
+        if (String(url) === 'https://www.stoic-quotes.com/api/quote') return quoteResponse()
         return translationResponse()
       },
     },
@@ -104,7 +104,7 @@ test('issues quote tickets and only translates their server-held quote text', as
       assert.equal(quote.text, 'The obstacle is the way.')
       assert.equal(quote.author, 'Marcus Aurelius')
       assert.match(quote.quoteId, /^[0-9a-f-]{36}$/)
-      assert.equal(quote.source, 'https://stoic-quotes.com/')
+      assert.equal(quote.source, 'https://www.stoic-quotes.com/')
 
       const arbitraryText = await fetch(`${origin}/api/translate`, {
         method: 'POST',
@@ -148,7 +148,7 @@ test('enforces interval and daily translation caps without leaking provider erro
       maxTranslationsPerDay: 2,
       minimumTranslationIntervalMs: 60_000,
       fetchImpl: async (url) => {
-        if (String(url) === 'https://stoic-quotes.com/api/quote') {
+        if (String(url) === 'https://www.stoic-quotes.com/api/quote') {
           quoteCount += 1
           return quoteResponse(`Quote ${quoteCount}`)
         }

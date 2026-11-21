@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
-const QUOTE_URL = 'https://stoic-quotes.com/api/quote'
+const QUOTE_URL = 'https://www.stoic-quotes.com/api/quote'
 const QUOTE_TIMEOUT_MS = 8_000
 const TRANSLATION_TIMEOUT_MS = 25_000
 const TICKET_TTL_MS = 10 * 60_000
@@ -151,7 +151,7 @@ export function createQuoteApi({
       quoteId,
       text: data.text.trim(),
       author: data.author.trim(),
-      source: 'https://stoic-quotes.com/',
+      source: 'https://www.stoic-quotes.com/',
     })
   }
 
