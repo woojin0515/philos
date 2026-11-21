@@ -25,8 +25,8 @@ export default function App() {
         <p className="prompt">생각해보기</p>
 
         <div className={`quote-scene${quote ? ' quote-scene--revealed' : ''}`}>
-          <div className="halo halo--outer" aria-hidden="true" />
-          <div className="halo halo--inner" aria-hidden="true" />
+          <div className="ambient-glass ambient-glass--back" aria-hidden="true" />
+          <div className="ambient-glass ambient-glass--front" aria-hidden="true" />
 
           {quote ? (
             <div className="quote-content" aria-live="polite">
