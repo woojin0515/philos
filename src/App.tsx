@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { getQuote, type Quote } from './services/quotes'
 
 export default function App() {
   const [quote, setQuote] = useState<Quote | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [swipeProgress, setSwipeProgress] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const swipeStart = useRef<{ pointerId: number; x: number; progress: number; travel: number } | null>(null)
 
   async function revealQuote() {
     if (loading) return
@@ -16,6 +19,77 @@ export default function App() {
       setError('문장을 불러오지 못했어요. 잠시 후 다시 눌러주세요.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  function handleSwipeStart(event: PointerEvent<HTMLDivElement>) {
+    if (loading) return
+    if (!(event.target instanceof Element) || !event.target.closest('.swipe-handle')) return
+    const handleWidth = event.currentTarget.querySelector('.swipe-handle')?.clientWidth ?? 0
+
+    swipeStart.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      progress: swipeProgress,
+      travel: Math.max(1, event.currentTarget.clientWidth - handleWidth),
+    }
+    event.currentTarget.setPointerCapture(event.pointerId)
+    setIsDragging(true)
+  }
+
+  function handleSwipeMove(event: PointerEvent<HTMLDivElement>) {
+    const start = swipeStart.current
+    if (!start || start.pointerId !== event.pointerId) return
+    const nextProgress = Math.max(0, Math.min(1, start.progress + (event.clientX - start.x) / start.travel))
+    setSwipeProgress(nextProgress)
+  }
+
+  function handleSwipeEnd(event: PointerEvent<HTMLDivElement>) {
+    const start = swipeStart.current
+    if (!start || start.pointerId !== event.pointerId) return
+    const finalProgress = Math.max(0, Math.min(1, start.progress + (event.clientX - start.x) / start.travel))
+    swipeStart.current = null
+    setIsDragging(false)
+    if (finalProgress >= 0.82) {
+      setSwipeProgress(0)
+      void revealQuote()
+    } else {
+      setSwipeProgress(0)
+    }
+  }
+
+  function handleSwipeCancel() {
+    swipeStart.current = null
+    setIsDragging(false)
+    setSwipeProgress(0)
+  }
+
+  function handleSwipeKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (loading) return
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      void revealQuote()
+      return
+    }
+    if (event.key === 'Home') {
+      event.preventDefault()
+      setSwipeProgress(0)
+      return
+    }
+    if (event.key === 'End') {
+      event.preventDefault()
+      setSwipeProgress(0)
+      void revealQuote()
+      return
+    }
+    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+      event.preventDefault()
+      const nextProgress = Math.max(0, Math.min(1, swipeProgress + (event.key === 'ArrowRight' ? 0.2 : -0.2)))
+      setSwipeProgress(nextProgress)
+      if (nextProgress >= 0.82) {
+        setSwipeProgress(0)
+        void revealQuote()
+      }
     }
   }
 
@@ -48,18 +122,44 @@ export default function App() {
                 <span className="spectrum-point" />
               </div>
 
-              <button
+              <div
                 className="start-button"
-                onClick={revealQuote}
-                disabled={loading}
-                aria-busy={loading}
+                role="slider"
+                tabIndex={0}
+                aria-label="밀어서 오늘의 문장 보기"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(swipeProgress * 100)}
+                aria-valuetext={
+                  loading
+                    ? '문장을 불러오는 중'
+                    : swipeProgress > 0
+                      ? `${Math.round(swipeProgress * 100)}퍼센트, 오른쪽으로 밀어 오늘의 문장 보기`
+                      : '오른쪽으로 밀어 오늘의 문장 보기'
+                }
+                aria-disabled={loading}
+                onPointerDown={handleSwipeStart}
+                onPointerMove={handleSwipeMove}
+                onPointerUp={handleSwipeEnd}
+                onPointerCancel={handleSwipeCancel}
+                onLostPointerCapture={handleSwipeCancel}
+                onKeyDown={handleSwipeKeyDown}
+                data-dragging={isDragging}
+                data-loading={loading}
               >
-                <span className="button-icon" aria-hidden="true">
+                <span className="swipe-fill" style={{ width: `${swipeProgress * 100}%` }} aria-hidden="true" />
+                <span className="swipe-label">{loading ? '문장을 불러오는 중' : '밀어서 명언 보기'}</span>
+                <span
+                  className="swipe-handle"
+                  style={{
+                    left: `${swipeProgress * 100}%`,
+                    transform: `translate(-${swipeProgress * 100}%, -50%)`,
+                  }}
+                  aria-hidden="true"
+                >
                   {loading ? <span className="spinner" /> : <span>→</span>}
                 </span>
-                <span>{loading ? '잠시만요' : '한 문장 만나기'}</span>
-                <span className="button-more" aria-hidden="true">•••</span>
-              </button>
+              </div>
             </div>
           )}
         </div>
